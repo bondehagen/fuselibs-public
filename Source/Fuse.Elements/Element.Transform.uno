@@ -50,7 +50,7 @@ namespace Fuse.Elements
 			public float3 GetOffset(Element elm) { return float3(0); }
 		}
 		
-		class CenterOrigin : ITransformOrigin
+		public class CenterOrigin : ITransformOrigin
 		{
 			public float3 GetOffset(Element elm) { return float3(elm.ActualSize/2,0); }
 		}
@@ -105,12 +105,12 @@ namespace Fuse.Elements
 		*/
 		public ITransformOrigin TransformOrigin
 		{
-			get { return Get(FastProperty1.TransformOrigin, DefaultTransformOrigin); }
+			get { return Get(FastProperty1.TransformOrigin, new TransformOrigins.CenterOrigin()); }
 			set 
 			{ 
 				if (TransformOrigin != value)
 				{
-					Set(FastProperty1.TransformOrigin, value, DefaultTransformOrigin);
+					Set(FastProperty1.TransformOrigin, value, new TransformOrigins.CenterOrigin());
 					InvalidateLocalTransform();
 				}
 			}
