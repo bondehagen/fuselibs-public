@@ -38,10 +38,13 @@ namespace Fuse.Internal
 
 		internal void SignalUsed(CacheRef<TKey, TValue> cacheRef)
 		{
-			lock (_mutex)
+			if defined(!JavaScript)
 			{
-				_unused.Remove(cacheRef._unusedListNode);
-				cacheRef._unusedListNode = null;
+				lock (_mutex)
+				{
+					_unused.Remove(cacheRef._unusedListNode);
+					cacheRef._unusedListNode = null;
+				}
 			}
 		}
 

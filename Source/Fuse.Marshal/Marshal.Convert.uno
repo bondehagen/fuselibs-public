@@ -15,6 +15,7 @@ namespace Fuse
 		static List<IConverter> _converters = new List<IConverter>();
 		public static void AddConverter(IConverter conv)
 		{
+			if (_converters == null) _converters = new List<IConverter>();
 			_converters.Add(conv);
 		}
 
