@@ -6,7 +6,7 @@ using Uno.Content.Fonts;
 
 namespace Fuse.Controls.FallbackTextRenderer
 {
-	sealed class DefaultTextRenderer
+	/*sealed class DefaultTextRenderer
 	{
 		class FontKey
 		{
@@ -200,6 +200,6 @@ namespace Fuse.Controls.FallbackTextRenderer
 		{
 			get { return DrawContext.CullFace; 	}
 		}
-	}
+	}*/
 
 }

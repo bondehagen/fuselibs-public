@@ -1,0 +1,64 @@
+<Extensions Backend="JavaScript">
+	<Type Name="Fuse.Controls.FallbackTextRenderer.CanvasTextRendererImpl">
+		<Method Signature="Create(string):Fuse.Controls.FallbackTextRenderer.CanvasTextRendererHandle">
+			<Body><![CDATA[
+				var ret = {};
+				ret.fontFace = $0;
+				ret.fontFaceQuoted = "'" + $0 + "'"
+				ret.canvas = document.createElement('canvas');
+				ret.context = ret.canvas.getContext("2d");
+				return ret;
+			]]></Body>
+		</Method>
+
+		<Method Signature="MeasureStringVirtual(Fuse.Controls.FallbackTextRenderer.CanvasTextRendererHandle,string):float">
+			<Body><![CDATA[
+				return $0.context.measureText($1).width;
+			]]></Body>
+		</Method>
+
+		<Method Signature="BeginRendering(Fuse.Controls.FallbackTextRenderer.CanvasTextRendererHandle,int,int,float)">
+			<Body><![CDATA[
+				var canvas = $0.canvas;
+				canvas.width = $1;
+				canvas.height = $2;
+
+				// Setting width and height on the canvas might clear/reset its values, so we make sure to reset the font afterwards.
+				@{Fuse.Controls.FallbackTextRenderer.CanvasTextRendererImpl.UpdateFontSize(Fuse.Controls.FallbackTextRenderer.CanvasTextRendererHandle,float):Call($0, $3)};
+
+				var context = $0.context;
+				// Because setting width/height on a canvas might clear it, this fillRect may not be necessary, but I'm not sure how that works on all browsers.
+				context.fillStyle = "#000";
+				context.fillRect(0, 0, $1, $2);
+				context.fillStyle = "#fff";
+				context.textBaseline = "middle";
+			]]></Body>
+		</Method>
+
+		<Method Signature="DrawText(Fuse.Controls.FallbackTextRenderer.CanvasTextRendererHandle,float,float,string)">
+			<Body><![CDATA[
+				$0.context.fillText($3, $1, $2);
+			]]></Body>
+		</Method>
+
+		<Method Signature="EndRendering(Fuse.Controls.FallbackTextRenderer.CanvasTextRendererHandle,int,int):Uno.Content.Images.Bitmap">
+			<Body><![CDATA[
+				var image = $0.context.getImageData(0, 0, $1, $2);
+				return @{Uno.Content.Images.Bitmap(int2,Uno.Graphics.Format,Uno.Buffer):New(@{int2(int,int):New(image.width, image.height)}, @{Uno.Graphics.Format.RGBA8888}, @{Uno.Buffer(byte[]):New(new Uint8Array(image.data.buffer))})};
+			]]></Body>
+		</Method>
+
+		<Method Signature="UpdateFontName(Fuse.Controls.FallbackTextRenderer.CanvasTextRendererHandle,string)">
+			<Body><![CDATA[
+				$0.fontFace = $1;
+			]]></Body>
+		</Method>
+
+		<Method Signature="UpdateFontSize(Fuse.Controls.FallbackTextRenderer.CanvasTextRendererHandle,float)">
+			<Body><![CDATA[
+				if ($1 + "px " + $0.fontFace != $0.context.font)
+					$0.context.font = $1 + "px" + $0.fontFaceQuoted;
+			]]></Body>
+		</Method>
+	</Type>
+</Extensions>
