@@ -20,18 +20,31 @@ namespace Fuse.Net.Http
 			_promise = new Uno.Threading.Promise<Response>();
 			debug_log "Run";
 
-			connect(request.Url, Continue);
+			connect(request.Url, Continue, ServerCertificateValidationCallback);
 
 			return _promise;
 		}
+		
+		bool ServerCertificateValidationCallback(string subject, string thumbprint)
+		{
+			if (_client.ServerCertificateValidationCallback != null)
+			{
+				var c = new X509Certificate(subject, "", thumbprint);
+				return _client.ServerCertificateValidationCallback(c, new X509Chain(), (SslPolicyErrors)(int)0);
+			}
+			return false;
+		}
 
 		[Foreign(Language.Java)]
-		void connect(string uri, Action<string> cont)
+		void connect(string uri, Action<string> cont, Func<string, string, bool> serverCertificateValidationCallback)
 		@{
 			HttpTest client = new HttpTest();
 			client.callback = new MyCallback() {
 				public void onDone(String response) {
 					cont.run(response);
+				}
+				public boolean onCheckServerTrusted(String subject, String thumbprint) {
+					return serverCertificateValidationCallback.run(subject, thumbprint);
 				}
 			};
 			client.createRequest(uri);

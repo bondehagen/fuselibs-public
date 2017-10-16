@@ -74,16 +74,27 @@ public class HttpTest {
 						try {
 							context = SSLContext.getInstance("TLS");
 
-							context.init(null, new X509TrustManager[]{new X509TrustManager(){
+							context.init(null, new X509TrustManager[] { new X509TrustManager() {
 								public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
 									System.out.println(authType);
 								}
 								public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
 									System.out.println(authType);
+									X509Certificate cert = chain[0];
+									/*try {
+										cert.checkValidity();
+									} catch(CertificateExpiredException cee) {
+
+									} catch(CertificateNotYetValidException cnyv) {
+
+									}*/
+
+									callback.onCheckServerTrusted(cert.getSubjectDN().getName(), "");
 								}
 								public X509Certificate[] getAcceptedIssuers() {
 									return new X509Certificate[0];
 								}}}, new SecureRandom());
+
 						} catch (KeyManagementException | NoSuchAlgorithmException e) {
 							e.printStackTrace();
 						}

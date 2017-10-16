@@ -6,6 +6,7 @@ namespace Fuse.Net.Http
 		public string Subject { get; private set; }
 		public string Issuer { get; private set; }
 		public string Thumbprint { get; private set; }
+		//public byte[] DerEncodedSignature 
 
 		public X509Certificate(string subject, string issuer, string thumbprint)
 		{
