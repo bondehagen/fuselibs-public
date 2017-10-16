@@ -96,7 +96,7 @@ SecCertificateCopySubjectSummary(secCertificateRef)
 
 				SecTrust secTrust = protectionSpace.ServerSecTrust;
 				SecCertificate certificate = secTrust[0];
- 				var x509 = certificate.ToX509Certificate();
+ 				var x509 = certificate.ToX509Certificate2();
 				var c = new X509Certificate(x509.Subject, x509.Issuer, x509.GetCertHashString());
 				var restult = _client.ServerCertificateValidationCallback(c, new X509Chain(), (SslPolicyErrors)(int)0);
 			}

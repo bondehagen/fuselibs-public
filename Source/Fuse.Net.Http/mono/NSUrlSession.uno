@@ -140,7 +140,7 @@ namespace Security
 	[DotNetType("Security.SecCertificate")]
 	extern(DOTNET && HOST_MAC) public class SecCertificate
 	{
-		public extern System.Security.Cryptography.X509Certificates.X509Certificate ToX509Certificate();
+		public extern System.Security.Cryptography.X509Certificates.X509Certificate2 ToX509Certificate2();
 		/*public extern X509Certificate2 ToX509Certificate2();
 		public extern NSData DerData { get; }*/
 		public extern string SubjectSummary { get; }
@@ -162,8 +162,8 @@ namespace Security
 }
 namespace System.Security.Cryptography.X509Certificates
 {
-	[DotNetType("System.Security.Cryptography.X509Certificates.X509Certificate")]
-	extern(DOTNET && HOST_MAC) public class X509Certificate
+	[DotNetType("System.Security.Cryptography.X509Certificates.X509Certificate2")]
+	extern(DOTNET && HOST_MAC) public class X509Certificate2
 	{
 		public extern string Subject { get; }
 		public extern string Issuer { get; }
