@@ -85,14 +85,15 @@ namespace Fuse.Net.Http
 			debug_log "DidReceiveChallenge";
 			if (_client.ServerCertificateValidationCallback != null)
 			{
-				var secCertificateRef = challenge.ProtectionSpace.ServerSecTrust;
+				
 				/*
 				SecTrustRef serverTrust = challenge.protectionSpace.serverTrust;
     			SecCertificateRef certificate = SecTrustGetCertificateAtIndex(serverTrust, 0);
 SecCertificateCopySubjectSummary(secCertificateRef)
 				*/
+				var secCertificateRef = challenge.ProtectionSpace.ServerSecTrust;
 				NSUrlProtectionSpace protectionSpace = challenge.ProtectionSpace;
-				debug_log protectionSpace.Host;
+				//debug_log protectionSpace.Host;
 
 				SecTrust secTrust = protectionSpace.ServerSecTrust;
 				SecCertificate certificate = secTrust[0];
