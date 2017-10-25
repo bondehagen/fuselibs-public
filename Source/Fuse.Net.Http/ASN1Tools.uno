@@ -37,92 +37,88 @@ namespace Fuse.Security
 			/*const byte TeletexString = 0x14;
 			const byte BMPString = 0x1E;
 			const byte  = 0x;*/
-			if (tag == SEQUENCE)
-			{
-				debug_log("SEQUENCE");
-			}
-			else if (tag == INTEGER)
-			{
-				var res = "";
-				foreach(var b in br.ReadBytes(length))
-				{
-					res += Uno.String.Format("{0:X}", b);
-				}
 
-				debug_log("INTEGER " + res);
-			}
-			else if (tag == BOOLEAN)
+			switch(tag)
 			{
-				debug_log("BOOLEAN ");
-				return;
-			}
-			else if (tag == BIT_STRING)
-			{
-				debug_log("BIT_STRING ");
-				return;
-			}
-			else if (tag == OCTET_STRING)
-			{
-				var bytes = br.ReadBytes(length);
-				debug_log("OCTET_STRING ");
-			}
-			else if (tag == _NULL)
-			{
-				//var b = br.ReadByte();
-				debug_log("NULL ");
-			}
-			else if (tag == OBJECT_ID)
-			{
-				var oid = DecodeOID(br.ReadBytes(length));
+				case SEQUENCE:
+					debug_log("SEQUENCE");
+					break;
+				case INTEGER:
+					var res = "";
+					foreach(var b in br.ReadBytes(length))
+					{
+						res += Uno.String.Format("{0:X}", b);
+					}
 
-				debug_log("OBJECT_ID " + oid + " ");
-			}
-			else if (tag == UTF8_STRING)
-			{
-				debug_log("UTF8_STRING ");
-				return;
-			}
-			else if (tag == PRINTABLE_STRING)
-			{
-				var bytes = br.ReadBytes(length);
-				debug_log("PRINTABLE_STRING " + Uno.Text.Utf8.GetString(bytes));
-			}
-			else if (tag == IA5_STRING)
-			{
-				debug_log("IA5_STRING ");
-				return;
-			}
-			else if (tag == SET)
-			{
-				debug_log("SET ");
-			}
-			else if (tag >> 6 == 0X02)
-			{
-				debug_log "context-defined";
-				PrintTag(tag);
-			}
-			else if (tag >> 6 == 0X00)
-			{
-				debug_log "UNIVERSAL";
-				PrintTag(tag);
-				return;
-			}
-			else if (tag >> 6 == 0X01)
-			{
-				debug_log "APPLICATION";
-				PrintTag(tag);
-				return;
-			}
-			else if (tag >> 6 == 0X03)
-			{
-				debug_log "PRIVATE";
-				PrintTag(tag);
-				return;
-			}
-			else
-			{
-				debug_log "Unknown tag: " + Uno.String.Format("{0:X}", tag);
-				return;
+					debug_log("INTEGER " + res);
+					break;
+
+				case BOOLEAN:
+					debug_log("BOOLEAN ");
+					return;
+					break;
+				case BIT_STRING:
+					debug_log("BIT_STRING ");
+					ReadTag(br);
+					break;
+				case OCTET_STRING:
+					debug_log("OCTET_STRING ");
+					ReadTag(br);
+					break;
+				case _NULL:
+					debug_log("NULL ");
+					break;
+				case OBJECT_ID:
+					var oid = DecodeOID(br.ReadBytes(length));
+					string oidv = "";
+					if (!OIDS.TryGetValue(oid, out oidv))
+					{
+						debug_log "could not locate " + oid;
+					}
+					debug_log("OBJECT_ID " + oid + " " + oidv);
+					break;
+
+				case UTF8_STRING:
+				case IA5_STRING:
+				case PRINTABLE_STRING:
+					var bytes = br.ReadBytes(length);
+					debug_log(Uno.Text.Utf8.GetString(bytes));
+					break;
+
+				case SET:
+					debug_log("SET ");
+					break;
+
+				default:
+					if (tag >> 6 == 0X02)
+					{
+						debug_log "context-defined";
+						PrintTag(tag);
+					}
+					else if (tag >> 6 == 0X00)
+					{
+						debug_log "UNIVERSAL";
+						PrintTag(tag);
+						var bytes = br.ReadBytes(length);
+					}
+					else if (tag >> 6 == 0X01)
+					{
+						debug_log "APPLICATION";
+						PrintTag(tag);
+						var bytes = br.ReadBytes(length);
+					}
+					else if (tag >> 6 == 0X03)
+					{
+						debug_log "PRIVATE";
+						PrintTag(tag);
+						var bytes = br.ReadBytes(length);
+					}
+					else
+					{
+						debug_log "Unknown tag: " + Uno.String.Format("{0:X}", tag);
+						return;
+					}
+					break;
 			}
 			if (length != -1)
 				ReadTag(br);
@@ -233,7 +229,7 @@ namespace Fuse.Security
 				if (i < bytes.Length - 1)
 					result += ".";
 			}
-			debug_log("result: " + result);
+
 			return result;
 		}
 
@@ -306,6 +302,7 @@ namespace Fuse.Security
 { "2.5.4.8.1","collectiveStateOrProvinceName" },
 { "2.5.4.9","streetAddress" },
 { "2.5.4.9.1","collectiveStreetAddress" },
+{ "2.5.29.32","certificatePolicies" },
 { "1.2.840.113549.1.1.11","sha256WithRSAEncryption" },
 { "1.2.840.113549.1.1.12","sha384WithRSAEncryption" },
 { "1.2.840.113549.1.1.13","sha512WithRSAEncryption" },
