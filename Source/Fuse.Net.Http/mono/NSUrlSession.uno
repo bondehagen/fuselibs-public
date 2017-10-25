@@ -167,6 +167,7 @@ namespace System.Security.Cryptography.X509Certificates
 	{
 		public extern string Subject { get; }
 		public extern string Issuer { get; }
+		public extern byte[] RawData { get; }
 		public extern virtual string GetCertHashString();
 	}
 }

@@ -89,7 +89,7 @@ public class HttpTest {
 
 									}*/
 
-									callback.onCheckServerTrusted(cert.getSubjectDN().getName(), "");
+									callback.onCheckServerTrusted(cert.getSubjectDN().getName(), cert.getEncoded());
 								}
 								public X509Certificate[] getAcceptedIssuers() {
 									return new X509Certificate[0];

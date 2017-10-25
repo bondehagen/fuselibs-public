@@ -92,14 +92,14 @@ namespace Fuse.Net.Http
 SecCertificateCopySubjectSummary(secCertificateRef)
 				*/
 				var secCertificateRef = challenge.ProtectionSpace.ServerSecTrust;
-				NSUrlProtectionSpace protectionSpace = challenge.ProtectionSpace;
+				var protectionSpace = challenge.ProtectionSpace;
 				//debug_log protectionSpace.Host;
 
-				SecTrust secTrust = protectionSpace.ServerSecTrust;
-				SecCertificate certificate = secTrust[0];
+				var secTrust = protectionSpace.ServerSecTrust;
+				var certificate = secTrust[0];
  				var x509 = certificate.ToX509Certificate2();
-				var c = new X509Certificate(x509.Subject, x509.Issuer, x509.GetCertHashString());
-				var restult = _client.ServerCertificateValidationCallback(c, new X509Chain(), (SslPolicyErrors)(int)0);
+				var c = new Fuse.Security.X509Certificate(x509.Subject, x509.Issuer, x509.RawData);
+				var restult = _client.ServerCertificateValidationCallback(c, new Fuse.Security.X509Chain(), (SslPolicyErrors)(int)0);
 			}
 
 			

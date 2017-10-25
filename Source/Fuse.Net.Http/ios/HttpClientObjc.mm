@@ -1,5 +1,15 @@
 #import "ios/HttpClientObjc.h"
 
+#import <CommonCrypto/CommonDigest.h>
+#import <Security/Security.h>
+#import <Foundation/Foundation.h>
+
+@interface HttpClientObjc ()
+
+	@property (nonatomic, copy) void (^onCheckServerCertificate)(uint8_t *, NSUInteger);
+
+@end
+
 @implementation HttpClientObjc
 
 - (id)init {
@@ -11,7 +21,10 @@
 	return self;
 }
 
-- (void)connect:(NSString *)url onCompleteHandler:(void (^)(NSString *))completeHandler {
+- (void)connect:(NSString *)url onCompleteHandler:(void (^)(NSString *))completeHandler onCheckServerCertificate:(void (^)(uint8_t *, NSUInteger))checkServerCertificate {
+
+	self.onCheckServerCertificate = checkServerCertificate;
+
 	NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:url]];
 	[request setHTTPMethod:@"GET"];
 	//[request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
@@ -67,15 +80,19 @@ didCompleteWithError:(NSError *)error
 {
 	//https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/URLLoadingSystem/Articles/AuthenticationChallenges.html#//apple_ref/doc/uid/TP40009507-SW1
 			//https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/URLLoadingSystem/Articles/AuthenticationChallenges.html
-	[NSLog(@"didReceiveChallenge")];
+	NSLog(@"didReceiveChallenge");
 	
 	SecTrustRef serverTrust = challenge.protectionSpace.serverTrust;
     SecCertificateRef certificate = SecTrustGetCertificateAtIndex(serverTrust, 0);
 	
-	NSDictionary *dict = dictionaryFromCerificateWithLongDescription(certificate);
-	for(id key in dict)
-	    NSLog(@"key=%@ value=%@", key, [dict objectForKey:key]);
-	
+    NSString* summary = (NSString*)CFBridgingRelease(SecCertificateCopySubjectSummary(certificate));
+    NSLog(@"Cert summary: %@", summary);
+    
+    CFDataRef dataref = SecCertificateCopyData(certificate);
+    
+    NSData* data = CFBridgingRelease(dataref);
+	self.onCheckServerCertificate((uint8_t *)[data bytes], [data length]);
+
 	completionHandler(NSURLSessionAuthChallengeUseCredential, [NSURLCredential credentialForTrust:challenge.protectionSpace.serverTrust]);
 }
 
@@ -378,65 +395,5 @@ expectedTotalBytes:(int64_t)expectedTotalBytes
 		self.downloadTaskDidResume(session, downloadTask, fileOffset, expectedTotalBytes);
 	}
 }*/
-- (NSDictionary*)dictionaryFromCerificateWithLongDescription:(SecCertificateRef)certificateRef {
-	
-	NSMutableDictionary *dict = [NSMutableDictionary new];
-	
-	if (certificateRef == NULL)
-		return dict;
 
-	const void *keys[] = { kSecOIDX509V1SubjectName, kSecOIDX509V1IssuerName, kSecOIDX509V1SerialNumber, kSecOIDX509V1Signature };
-	CFArrayRef keySelection = CFArrayCreate(NULL, keys , sizeof(keys)/sizeof(keys[0]), &kCFTypeArrayCallBacks);
-	
-	CFErrorRef error;
-	CFDictionaryRef vals = SecCertificateCopyValues(certificateRef, keySelection, &error);
-	
-	for(int i = 0; i < sizeof(keys)/sizeof(keys[0]); i++) {
-		CFDictionaryRef dict_values = CFDictionaryGetValue(vals, keys[i]);
-		CFStringRef label = CFDictionaryGetValue(dict_values, kSecPropertyKeyLabel);
-		if (CFEqual(label, CFSTR("Serial Number"))) {
-			CFStringRef value = CFDictionaryGetValue(dict_values, kSecPropertyKeyValue);
-			if (value == NULL)
-				continue;
-			[dict setObject:(__bridge NSString*)(value) forKey:(__bridge NSString*)label];
-		} else if (CFEqual(label, CFSTR("Signature"))) {
-			CFDataRef value = CFDictionaryGetValue(dict_values, kSecPropertyKeyValue);
-			if (value == NULL)
-				continue;
-			[dict setObject:(__bridge NSData*)(value) forKey:(__bridge NSString*)label];
-		} else {
-			CFArrayRef values = CFDictionaryGetValue(dict_values, kSecPropertyKeyValue);
-			if (values == NULL)
-				continue;
-			[dict setObject:[self dictionaryFromDNwithSubjectName:values] forKey:(__bridge NSString*)label];
-		}
-	}
-	
-	CFRelease(vals);
-	
-	return dict;
-}
-
-- (NSDictionary*)dictionaryFromDNwithSubjectName:(CFArrayRef)array {
-	
-	NSMutableDictionary *dict = [NSMutableDictionary new];
-	
-	const void *keys[] = { kSecOIDCommonName, kSecOIDEmailAddress, kSecOIDOrganizationalUnitName, kSecOIDOrganizationName, kSecOIDLocalityName, kSecOIDStateProvinceName, kSecOIDCountryName };
-	NSArray *labels = [NSArray arrayWithObjects:@"CN", @"E", @"OU", @"O", @"L", @"S", @"C", @"E", nil];
-	
-	for(int i = 0; i < sizeof(keys)/sizeof(keys[0]);  i++) {
-		for (CFIndex n = 0 ; n < CFArrayGetCount(array); n++) {
-			CFDictionaryRef dict_values = CFArrayGetValueAtIndex(array, n);
-			if (CFGetTypeID(dict_values) != CFDictionaryGetTypeID())
-				continue;
-			CFTypeRef dictkey = CFDictionaryGetValue(dict_values, kSecPropertyKeyLabel);
-			if (!CFEqual(dictkey, keys[i]))
-				continue;
-			CFStringRef str = (CFStringRef) CFDictionaryGetValue(dict_values, kSecPropertyKeyValue);
-			[dict setObject:(__bridge  NSString*)str forKey:labels[i]];
-		}
-	}
-	
-	return dict;
-}
 @end

@@ -1,6 +1,7 @@
 using Uno;
 using Uno.Threading;
 using Uno.Compiler.ExportTargetInterop;
+using Fuse.Security;
 
 namespace Fuse.Net.Http
 {
@@ -28,8 +29,18 @@ namespace Fuse.Net.Http
 		public Future<Response> SendAsync(Request request)
 		{
 			_promise = new Uno.Threading.Promise<Response>();
-			Connect(request.Url, Continue);
+			Connect(request.Url, Continue, ServerCertificateValidationCallback);
 			return _promise;
+		}
+
+		bool ServerCertificateValidationCallback(byte[] asn1derEncodedCert)
+		{
+			if (_httpClient.ServerCertificateValidationCallback != null)
+			{
+				var c = new X509Certificate("", "", asn1derEncodedCert);
+				return _httpClient.ServerCertificateValidationCallback(c, new X509Chain(), (SslPolicyErrors)(int)0);
+			}
+			return false;
 		}
 
 		void Continue(string response)
@@ -49,11 +60,18 @@ namespace Fuse.Net.Http
 		}
 
 		[Foreign(Language.ObjC)]
-		void Connect(string strURL, Action<string> completeHandler)
+		void Connect(string strURL, Action<string> completeHandler, Func<byte[], bool> serverCertificateValidationCallback)
 		@{
-			[@{HttpClientImplementation:Of(_this)._client:Get()} connect:strURL onCompleteHandler:^(NSString * response) {
+			[@{HttpClientImplementation:Of(_this)._client:Get()} connect:strURL
+				onCompleteHandler:^(NSString * response) {
 					completeHandler(response);
-				}];
+				}
+				onCheckServerCertificate:^(uint8_t * data, NSUInteger length) {
+					id<UnoArray> arr = @{byte[]:New((int)length)};
+					memcpy(arr.unoArray->Ptr(), data, length);
+					serverCertificateValidationCallback(arr);
+				}
+			];
 		@}
 
 		public void Dispose()

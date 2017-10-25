@@ -1,6 +1,7 @@
 using Uno;
 using Uno.Collections;
 using Uno.Compiler.ExportTargetInterop;
+using Fuse.Security;
 
 namespace Fuse.Net.Http
 {
@@ -87,17 +88,17 @@ namespace Fuse.Net.Http
 			else
 			{
 				debug_log "err";
-				_promise.Reject(new Exception("SendAsync failed"));
+				_promise.Reject(new Uno.Exception(task.Exception.ToString()));
 			}
 		}
 
-		bool Validate(object sender, System.Security.Cryptography.X509Certificates.X509Certificate certificate,
+		bool Validate(object sender, System.Security.Cryptography.X509Certificates.X509Certificate2 certificate,
 			System.Security.Cryptography.X509Certificates.X509Chain chain, System.Net.Security.SslPolicyErrors sslPolicyErrors)
 		{
 			if (_client.ServerCertificateValidationCallback != null)
 			{
-				var c = new X509Certificate(certificate.Subject, certificate.Issuer, certificate.GetCertHashString());
-				return _client.ServerCertificateValidationCallback(c, new X509Chain(), (SslPolicyErrors)(int)sslPolicyErrors);
+				var c = new X509Certificate(certificate.Subject, certificate.Issuer, certificate.RawData);
+				return _client.ServerCertificateValidationCallback(c, new Fuse.Security.X509Chain(), (Fuse.Security.SslPolicyErrors)(int)sslPolicyErrors);
 			}
 			return false;
 		}
@@ -105,12 +106,14 @@ namespace Fuse.Net.Http
 }
 namespace System.Security.Cryptography.X509Certificates
 {
-	[DotNetType("System.Security.Cryptography.X509Certificates.X509Certificate")]
-	extern(DOTNET && !HOST_MAC) public class X509Certificate
+	[DotNetType("System.Security.Cryptography.X509Certificates.X509Certificate2")]
+	extern(DOTNET && !HOST_MAC) public class X509Certificate2
 	{
 		public extern string Subject { get; }
 		public extern string Issuer { get; }
+		public extern byte[] RawData { get; }
 		public extern virtual string GetCertHashString();
+
 	}
 
 	[DotNetType("System.Security.Cryptography.X509Certificates.X509Chain")]
@@ -132,7 +135,7 @@ namespace System.Net.Security
 
 	[DotNetType("System.Net.Security.RemoteCertificateValidationCallback")]
 	extern(DOTNET && !HOST_MAC) public delegate bool RemoteCertificateValidationCallback(object sender,
-		X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors);
+		X509Certificate2 certificate, System.Security.Cryptography.X509Certificates.X509Chain chain, SslPolicyErrors sslPolicyErrors);
 }
 namespace System.Threading
 {	
@@ -156,6 +159,7 @@ namespace System.Threading.Tasks
 	[DotNetType("System.Threading.Tasks.Task`1")]
 	extern(DOTNET && !HOST_MAC) internal class Task<TResult>
 	{
+		public extern System.Exception Exception { get; }
 		public extern TResult Result { get; }
 		public extern Task ContinueWith(Action<Task<TResult>> continuationAction);
 		public extern bool IsCanceled { get; }
@@ -170,6 +174,12 @@ namespace System
 	{
 		public extern Uri(string s) {}
 	}
+
+	[DotNetType("System.Exception")]
+	extern(DOTNET) internal class Exception
+	{
+	}
+
 }
 namespace System.Net
 {

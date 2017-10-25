@@ -1,6 +1,7 @@
 using Uno;
 using Uno.Threading;
 using Fuse.Net.Http;
+using Fuse.Security;
 
 public partial class App2
 {
@@ -9,7 +10,7 @@ public partial class App2
 	public App2()
 	{
 		_client = new HttpClient();
-		_client.ClientCertificates.Add(LoadClientCertificateFromBundle());
+		//_client.ClientCertificates.Add(LoadClientCertificateFromBundle());
 		_client.ServerCertificateValidationCallback = ValidateServerCertificate;
 
 		InitializeUX();
