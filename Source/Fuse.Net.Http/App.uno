@@ -1,4 +1,5 @@
 using Uno;
+using Uno.IO;
 using Uno.Threading;
 using Fuse.Net.Http;
 using Fuse.Security;
@@ -10,14 +11,15 @@ public partial class App2
 	public App2()
 	{
 		_client = new HttpClient();
-		//_client.ClientCertificates.Add(LoadClientCertificateFromBundle());
+		_client.ClientCertificates.Add(LoadClientCertificateFromBundle(null));
 		_client.ServerCertificateValidationCallback = ValidateServerCertificate;
 
 		InitializeUX();
 	}
 
-	X509Certificate LoadClientCertificateFromBundle()
+	X509Certificate LoadClientCertificateFromBundle(BundleFile bundleFile)
 	{
+		var foo = LoadCertificateFromBytes.Load(bundleFile.ReadAllBytes());
 		return null;
 	}
 
