@@ -13,6 +13,7 @@ namespace Fuse.Motion.Simulation.Test
 			var bytes = File.ReadAllBytes("c:/azurecert.der");
 			var asn = new ASN1Tools();
 			asn.Decode(bytes);
+			Assert.IsTrue(true);
 		}
 	}
 }

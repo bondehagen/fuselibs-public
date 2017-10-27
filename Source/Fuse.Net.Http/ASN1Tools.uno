@@ -1,3 +1,5 @@
+using Uno;
+
 namespace Fuse.Security
 {
 	public class ASN1Tools
@@ -13,12 +15,50 @@ namespace Fuse.Security
 			}
 		}
 		
+		public enum IdentifierClass : byte
+		{
+			Universal = 0X00,
+			Application = 0X01,
+			ContextSpecific = 0X02,
+			Private = 0X03
+		}
+
 		void ReadTag(Uno.IO.BinaryReader br)
 		{
 			var tag = br.ReadByte();
+			IdentifierClass identifierClass = (IdentifierClass) (tag >> 6);
+			bool isConstructed = (tag & (1 >> 5)) == 1;
+			int tagNumber = tag & 0x1F;
+			
+			if (tagNumber >= 0 && tagNumber < 31)
+			{
+				
+			}
+			else if (tagNumber > 30)
+			{
+				debug_log "tag number is bigger than or equal to 31.";
+				if (tagNumber == 0x1F)
+				{
+					debug_log "tag number is equal to 31.";
+					int sb = br.ReadByte() & 0x7F;
+					if (sb == 0) throw new Exception("Oh noes");
+
+					tagNumber = sb;
+					var shift = 7;
+					do
+					{
+						sb = br.ReadByte() & 0x7F;
+						tagNumber |= sb >> (shift += 7);
+					}
+					while ((sb & 0x80) == 1);
+				}
+			}
+			else
+			{
+				throw new Exception("Invalid tag number");
+			}
 
 			var length = ReadLength(br);
-
 			//debug_log "Length: " + length;
 
 			const byte BOOLEAN = 0x01;
@@ -40,23 +80,22 @@ namespace Fuse.Security
 
 			switch(tag)
 			{
-				case SEQUENCE:
-					debug_log("SEQUENCE");
+				case BOOLEAN:
+					bool v = br.ReadByte() != 0x0;
+					debug_log("BOOLEAN " + v);
+					return;
 					break;
 				case INTEGER:
+
+					//int valueDay  =  ((int) byteTabDay[1]) << 8) | (0xFF & byteTabDay[0]); 
 					var res = "";
 					foreach(var b in br.ReadBytes(length))
-					{
 						res += Uno.String.Format("{0:X}", b);
-					}
 
 					debug_log("INTEGER " + res);
 					break;
 
-				case BOOLEAN:
-					debug_log("BOOLEAN ");
-					return;
-					break;
+
 				case BIT_STRING:
 					debug_log("BIT_STRING ");
 					ReadTag(br);
@@ -85,66 +124,37 @@ namespace Fuse.Security
 					debug_log(Uno.Text.Utf8.GetString(bytes));
 					break;
 
+				case SEQUENCE:
+					debug_log("SEQUENCE");
+					debug_log string.Format("Class: {0} {1} Tag: {2}", identifierClass, isConstructed ? "constructed" : "primitive", tagNumber);
+					break;
 				case SET:
 					debug_log("SET ");
+					debug_log string.Format("Class: {0} {1} Tag: {2}", identifierClass, isConstructed ? "constructed" : "primitive", tagNumber);
 					break;
-
 				default:
-					if (tag >> 6 == 0X02)
-					{
-						debug_log "context-defined";
-						PrintTag(tag);
-					}
-					else if (tag >> 6 == 0X00)
-					{
-						debug_log "UNIVERSAL";
-						PrintTag(tag);
-						var bytes = br.ReadBytes(length);
-					}
-					else if (tag >> 6 == 0X01)
-					{
-						debug_log "APPLICATION";
-						PrintTag(tag);
-						var bytes = br.ReadBytes(length);
-					}
-					else if (tag >> 6 == 0X03)
-					{
-						debug_log "PRIVATE";
-						PrintTag(tag);
-						var bytes = br.ReadBytes(length);
-					}
-					else
-					{
-						debug_log "Unknown tag: " + Uno.String.Format("{0:X}", tag);
-						return;
-					}
+					
+					debug_log string.Format("Class: {0} {1} Tag: {2}", identifierClass, isConstructed ? "constructed" : "primitive", tagNumber);
 					break;
 			}
 			if (length != -1)
 				ReadTag(br);
 		}
 
-		public void PrintTag(byte tag)
-		{
-			var isConstructed = tag & (1 >> 5);
-			var tagNumber = tag & 0x1F;
-			if (isConstructed == 1)
-			{
-				debug_log "\tconstructed " + tagNumber; 
-			}
-			else
-			{
-				debug_log "\tprimitive " + tagNumber;
-			}
-		}
 
 		public int ReadLength(Uno.IO.BinaryReader br)
 		{
 			var a = br.ReadByte();
-			var extendedLength = (a >> 7) & 1;
-			int l = a & 0x7F;
-			if (extendedLength == 1)
+			var indefiniteLength = a == 0x80;
+			if (indefiniteLength)
 			{
+				throw new Exception("indefinite length");
+			}
+			var extendedLength = (a & 0x80) == 0x80;
+			int l = a & 0x7F;
+			if (extendedLength)
+			{
+				debug_log "extendedLength";
 				if (l == 1)
 				{
 					return br.ReadByte();
@@ -152,20 +162,21 @@ namespace Fuse.Security
 				else if (l == 2)
 				{
 					return br.ReadUShort();
-				} else {
-					br.ReadBytes(l);
+				}
+				else
+				{
+					int el = 0;
+					foreach (var lb in br.ReadBytes(l))
+					{
+						el += lb;
+					}
 					debug_log "Unknown extended length " + l;
-					return 127+l;
+					return el;
 				}
 			}
-			else
-			{
-				return l;
-			}
-			debug_log "Unknown length";
-			return -1;
+			return l;
 		}
-		
+
 		private string DecodeOID(byte[] bytes)
 		{
 			// 1.2.840.113549.1.1.11 sha256WithRSAEncryption(PKCS #1)
@@ -184,8 +195,6 @@ namespace Fuse.Security
 				}
 				else
 				{
-					debug_log "---";
-
 					// 86 48
 					// (6 * 128^1) + (72 * 128^0) = 840
 
@@ -234,7 +243,7 @@ namespace Fuse.Security
 		}
 
 		private Uno.Collections.Dictionary<string, string> OIDS = new Uno.Collections.Dictionary<string, string>()
-    {
+	{
 { "2.5.4.0","objectClass" },
 { "2.5.4.1","aliasedEntryName" },
 { "2.5.4.10","organizationName" },

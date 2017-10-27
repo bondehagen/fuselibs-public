@@ -1,6 +1,7 @@
 using Uno;
 using Uno.Collections;
 using Uno.Threading;
+using Fuse.Security;
 
 namespace Fuse.Net.Http
 {
