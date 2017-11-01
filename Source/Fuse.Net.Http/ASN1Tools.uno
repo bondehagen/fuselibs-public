@@ -1,174 +1,390 @@
 using Uno;
+using Uno.Text;
+using Uno.Collections;
 
 namespace Fuse.Security
 {
-	public class ASN1Tools
+	public enum IdentifierClass : byte
 	{
-		public void Decode(byte[] data)
+		Universal = 0X00,
+		Application = 0X01,
+		ContextSpecific = 0X02,
+		Private = 0X03
+	}
+
+	public enum TagName : byte
+	{
+		EOC = 0,
+		BOOLEAN = 0x01,
+		INTEGER = 0x02,
+		BIT_STRING = 0x03,
+		OCTET_STRING = 0x04,
+		_NULL = 0x05,
+		OBJECT_ID = 0x06,
+		Object_Descriptor = 0x07,
+		EXTERNAL = 0x08,
+		REAL = 0x09,
+		ENUMERATED = 0x0A,
+		EMBEDDED_PDV = 0x0B,
+		UTF8_STRING = 0x0C,
+		SEQUENCE = 0x10,
+		SET = 0x11,
+		NumericString = 0x12,
+		PRINTABLE_STRING = 0x13,
+		T61String = 0x14, // TeletexStrin,
+		VideotexString = 0x15,
+		IA5_STRING = 0x16,
+		UTC_TIME = 0x17,
+		GeneralizedTime = 0x18,
+		GraphicString = 0x19,
+		VisibleString = 0x1A,
+		GeneralString = 0x1B,
+		UniversalString = 0x1C,
+		CHARACTER = 0x1D,
+		BMPString = 0x1E
+	}
+
+	class Node
+	{
+		public Tag Tag { get; set; }
+
+		public int Length { get; set; }
+
+		public int ContentsLength { get; set; }
+
+		public List<Node> Children  { get; set; }
+
+		public string Value { get; set; }
+
+		public Node()
 		{
-			debug_log "Cert length: " + data.Length;
-			using (var stream = new Uno.IO.MemoryStream(data))
-			using (var br = new Uno.IO.BinaryReader(stream))
-			{
-				br.LittleEndian = false;
-				ReadTag(br);
-			}
-		}
-		
-		public enum IdentifierClass : byte
-		{
-			Universal = 0X00,
-			Application = 0X01,
-			ContextSpecific = 0X02,
-			Private = 0X03
+			Children = new List<Node>();
 		}
 
-		void ReadTag(Uno.IO.BinaryReader br)
+		public string ToString()
 		{
-			var tag = br.ReadByte();
-			IdentifierClass identifierClass = (IdentifierClass) (tag >> 6);
-			bool isConstructed = (tag & (1 >> 5)) == 1;
-			int tagNumber = tag & 0x1F;
-			
-			if (tagNumber >= 0 && tagNumber < 31)
+			Node tree = this;
+			var sb = new StringBuilder();
+			List<Node> firstStack = new List<Node>();
+			firstStack.Add(tree);
+
+			List<List<Node>> childListStack = new List<List<Node>>();
+			childListStack.Add(firstStack);
+
+			while (childListStack.Count > 0)
 			{
-				
-			}
-			else if (tagNumber > 30)
-			{
-				debug_log "tag number is bigger than or equal to 31.";
-				if (tagNumber == 0x1F)
+				List<Node> childStack = childListStack[childListStack.Count - 1];
+
+				if (childStack.Count == 0)
 				{
-					debug_log "tag number is equal to 31.";
-					int sb = br.ReadByte() & 0x7F;
-					if (sb == 0) throw new Exception("Oh noes");
+					childListStack.RemoveAt(childListStack.Count - 1);
+				}
+				else
+				{
+					tree = childStack[0];
+					childStack.RemoveAt(0);
 
-					tagNumber = sb;
-					var shift = 7;
-					do
+					string indent = "";
+					for (int i = 0; i < childListStack.Count - 1; i++)
 					{
-						sb = br.ReadByte() & 0x7F;
-						tagNumber |= sb >> (shift += 7);
+						indent += (childListStack[i].Count > 0) ? "|  " : "   ";
 					}
-					while ((sb & 0x80) == 1);
+					var v = (tree.Value != null) ? " " + tree.Value : "";
+					sb.AppendLine(indent + "+- " + tree.Tag.ToString() + v);
+
+					if (tree.Children.Count > 0)
+					{
+						var l = new List<Node>();
+						l.AddRange(tree.Children);
+						childListStack.Add(l);
+					}
 				}
 			}
-			else
-			{
-				throw new Exception("Invalid tag number");
-			}
+			return sb.ToString();
+		}
+	}
+	
+	public struct Tag
+	{
+		public IdentifierClass IdentifierClass { get; set; }
+		public bool IsConstructed { get; set; }
+		public bool IsPrimitive { get { return !IsConstructed; } }
+		public TagName Number { get; set; }
 
-			var length = ReadLength(br);
-			//debug_log "Length: " + length;
-
-			const byte BOOLEAN = 0x01;
-			const byte INTEGER = 0x02; 
-			const byte BIT_STRING = 0x03;
-			const byte OCTET_STRING = 0x04;
-			const byte _NULL = 0x05;
-			const byte OBJECT_ID = 0x06;
-			const byte UTF8_STRING = 0x0C;
-			const byte PRINTABLE_STRING = 0x13;
-			const byte IA5_STRING = 0x16;
-			const byte UNICODE_STRING = 0x1e;
-			const byte SEQUENCE = 0x30;
-			const byte SET = 0x31;
-
-			/*const byte TeletexString = 0x14;
-			const byte BMPString = 0x1E;
-			const byte  = 0x;*/
-
-			switch(tag)
-			{
-				case BOOLEAN:
-					bool v = br.ReadByte() != 0x0;
-					debug_log("BOOLEAN " + v);
-					return;
-					break;
-				case INTEGER:
-
-					//int valueDay  =  ((int) byteTabDay[1]) << 8) | (0xFF & byteTabDay[0]); 
-					var res = "";
-					foreach(var b in br.ReadBytes(length))
-						res += Uno.String.Format("{0:X}", b);
-
-					debug_log("INTEGER " + res);
-					break;
-
-
-				case BIT_STRING:
-					debug_log("BIT_STRING ");
-					ReadTag(br);
-					break;
-				case OCTET_STRING:
-					debug_log("OCTET_STRING ");
-					ReadTag(br);
-					break;
-				case _NULL:
-					debug_log("NULL ");
-					break;
-				case OBJECT_ID:
-					var oid = DecodeOID(br.ReadBytes(length));
-					string oidv = "";
-					if (!OIDS.TryGetValue(oid, out oidv))
-					{
-						debug_log "could not locate " + oid;
-					}
-					debug_log("OBJECT_ID " + oid + " " + oidv);
-					break;
-
-				case UTF8_STRING:
-				case IA5_STRING:
-				case PRINTABLE_STRING:
-					var bytes = br.ReadBytes(length);
-					debug_log(Uno.Text.Utf8.GetString(bytes));
-					break;
-
-				case SEQUENCE:
-					debug_log("SEQUENCE");
-					debug_log string.Format("Class: {0} {1} Tag: {2}", identifierClass, isConstructed ? "constructed" : "primitive", tagNumber);
-					break;
-				case SET:
-					debug_log("SET ");
-					debug_log string.Format("Class: {0} {1} Tag: {2}", identifierClass, isConstructed ? "constructed" : "primitive", tagNumber);
-					break;
-				default:
-					
-					debug_log string.Format("Class: {0} {1} Tag: {2}", identifierClass, isConstructed ? "constructed" : "primitive", tagNumber);
-					break;
-			}
-			if (length != -1)
-				ReadTag(br);
+		public Tag(IdentifierClass identifierClass, bool isConstructed, int number)
+		{
+			IdentifierClass = identifierClass;
+			IsConstructed = isConstructed;
+			Number = (TagName)number;
 		}
 
-
-		public int ReadLength(Uno.IO.BinaryReader br)
+		public string ToString()
 		{
-			var a = br.ReadByte();
+			return string.Format("{2} {0} {1}", IdentifierClass, IsConstructed ? "constructed" : "primitive", Number);
+		}
+	}
+
+	public class ASN1Tools
+	{
+		byte[] buffer;
+		int offset;
+		int _depth;
+		int _length;
+
+		public ASN1Tools(byte[] data)
+		{
+			// NOTE: This implementation is supposed to only conform to DER (subset of BER) encoding although some rules for CER and BER also exist for future development. 
+			buffer = data;
+			offset = 0;
+			_depth = 0;
+			_length = data.Length;
+		}
+
+		public void Decode()
+		{
+			var node = ReadNext();
+			debug_log "------------------------------";
+			debug_log node.ToString();
+			debug_log "------------------------------";
+		}
+		
+		void Print(string str)
+		{
+			var tabs = "";
+			for (var i = 0; i < _depth; i++)
+				tabs += "  ";
+
+			debug_log _currentOffset + ":d=" + _depth + "  hl=" + _currentHeaderLength + " l=" + _currentContentsLength + " " + tabs + str;
+		}
+
+		int _currentOffset = 0;
+		int _currentHeaderLength = 0;
+		int _currentContentsLength = 0;
+		int _currentDepth = 0;
+		
+		Node ReadChildren(Node node)
+		{
+			var length = node.ContentsLength;
+			_depth++;
+			var seqLength = 0;
+			while (seqLength < length)
+			{
+				debug_log offset + " " + seqLength + " " + length;
+				var seqNode = ReadNext();
+				seqLength += seqNode.Length;
+				node.Children.Add(seqNode);
+				debug_log offset + " " + seqLength + " " + seqNode.Length + " " + length;
+			}
+			debug_log "end";
+			_depth--;
+			return node;
+		}
+
+		Node ReadNext()
+		{
+			if (offset >= _length)
+				return null;
+			
+			_currentOffset = offset;
+			var currentOffset = offset;
+			var node = new Node();
+			var tag = node.Tag = ReadTag();
+			node.ContentsLength = ReadLength();
+			_currentContentsLength = node.ContentsLength;
+
+			_currentHeaderLength = offset - currentOffset;
+
+			node = ReadContents(node);
+
+			node.Length = offset - currentOffset;
+			var totalRead = _currentHeaderLength + node.ContentsLength;
+			if (node.Length != totalRead)
+				debug_log("WARNING: expected: " + totalRead + " but got: " + node.Length);
+
+			Print(tag.Number + " " + node.Length + " CLOSE ");
+			return node;
+		}
+
+		Node ReadContents(Node node)
+		{
+			var found = false;
+			var tag = node.Tag;
+			var length = node.ContentsLength;
+			if (tag.IsConstructed)
+			{
+				switch(tag.Number)
+				{
+					case TagName.SEQUENCE:
+					case TagName.SET:
+						Print(tag.ToString());
+						node = ReadChildren(node);
+						found = true;
+						break;
+
+					default:
+						if (tag.IdentifierClass == IdentifierClass.ContextSpecific)
+						{
+							Print("[" + tag.Number + "] " + tag.ToString());
+							node = ReadChildren(node);
+							found = true;
+						}
+						else{
+							throw new Exception("Unknown tag");
+							Print("Unknown " + tag.ToString());
+							ReadBytes(node.ContentsLength);
+						}
+
+						break;
+				}
+			}
+			else if (tag.IsPrimitive)
+			{
+				switch(tag.Number)
+				{
+					case TagName.EOC:
+						throw new Exception("The end of content, not supported by DER encoding");
+
+					case TagName.BOOLEAN:
+						bool v = ReadByte() != 0x0;
+						Print(node.Value = "BOOLEAN " + v);
+						found = true;
+						break;
+
+					case TagName.INTEGER:
+						if (length > 8)
+						{
+							var res = "";
+							for (var i = 0; i < length; i++)
+							{
+								res += Uno.String.Format("{0:X}", ReadByte());
+							}
+							Print(node.Value = "INTEGER " + res);
+							found = true;
+						}
+						else
+						{
+							Print(node.Value = "INTEGER " + ReadInteger(length));
+							found = true;
+						}
+						break;
+
+					case TagName._NULL:
+						Print(node.Value = "NULL ");
+						found = true;
+						break;
+
+					case TagName.OBJECT_ID:
+						var oid = DecodeOID(length);
+						string oidv = "";
+						if (!OIDS.TryGetValue(oid, out oidv))
+						{
+							oidv = "Unknown";
+						}
+						Print(node.Value = "OBJECT_ID " + oid + " " + oidv);
+						found = true;
+						break;
+				}
+			}
+			if (!found)
+			switch(tag.Number)
+			{
+				case TagName.BIT_STRING:
+					Print("BIT_STRING "  + tag.ToString());
+					
+					if (tag.IsPrimitive)
+					{
+						int unusedBits = (int)(uint)ReadByte();
+						/*if (unusedBits > 0)
+						{
+							ReadNext(length - unusedBits);
+							ReadBytes(unusedBits);
+						}
+						else
+							ReadNext(length);*/
+					}/*else  {
+						throw new Exception("DER encoding only support primitive BIT_STRING");
+					}*/
+					ReadBytes(length -1);
+					found = true;
+					break;
+				case TagName.OCTET_STRING:
+					Print("OCTET_STRING " + tag.ToString());
+					if (tag.IsConstructed)
+						throw new Exception("DER encoding only support primitive OCTET_STRING");
+
+					ReadBytes(length);
+					//ReadNext(length);
+					found = true;
+					break;
+
+				case TagName.UTC_TIME:
+					var time = ReadUtcTime(length);
+					Print(node.Value = "UTC_TIME " + time);
+					found = true;
+					break;
+
+				case TagName.UTF8_STRING:
+				case TagName.IA5_STRING:
+				case TagName.PRINTABLE_STRING:
+					Print(node.Value = "STRING: " + Uno.Text.Utf8.GetString(ReadBytes(length)));
+					found = true;
+					break;
+			}
+
+			return node;
+		}
+
+		public Tag ReadTag()
+		{
+			var tagByte = ReadByte();
+
+			int tagNumber = tagByte & 0x1F;
+			if (tagNumber == 0x1F)
+			{
+				tagNumber = 0;
+				byte sb = 0;
+				int bits = 0;
+				do
+				{
+					sb = ReadByte();
+					tagNumber <<= 7;
+					tagNumber |= sb & 0x7F;
+					bits += 7;
+					if (bits > 31)
+						throw new Exception("Too long tag");
+				}
+				while ((sb & 0x80) != 0);
+			}
+
+			return new Tag((IdentifierClass)(tagByte >> 6), (tagByte >> 5 & 1) == 1, tagNumber);
+		}
+
+		public int ReadLength()
+		{
+			var a = ReadByte();
 			var indefiniteLength = a == 0x80;
 			if (indefiniteLength)
 			{
-				throw new Exception("indefinite length");
+				throw new Exception("indefinite length (not allowed for DER encoding, so skipped here)");
 			}
 			var extendedLength = (a & 0x80) == 0x80;
 			int l = a & 0x7F;
 			if (extendedLength)
 			{
-				debug_log "extendedLength";
 				if (l == 1)
 				{
-					return br.ReadByte();
+					return ReadByte();
 				}
 				else if (l == 2)
-				{
-					return br.ReadUShort();
+				{ 
+					return ReadByte() << 8 | ReadByte();
 				}
 				else
 				{
 					int el = 0;
-					foreach (var lb in br.ReadBytes(l))
+					for (var i = 0; i < l; i++)
 					{
-						el += lb;
+						el += ReadByte();
 					}
 					debug_log "Unknown extended length " + l;
 					return el;
@@ -176,15 +392,63 @@ namespace Fuse.Security
 			}
 			return l;
 		}
+		
+		public ulong ReadInteger(int length)
+		{
+			length--;
+			ulong v = 0;
+			for (var i = 0; i < length; i++)
+			{
+				v |=(ulong)ReadByte() << (length - i) * 8;
+			}
+			return v | (ulong)ReadByte();
+		}
+		
+		byte ReadByte()
+		{
+			try
+			{ 
+				return buffer[offset++];
+			}
+			catch(Exception e)
+			{
+				debug_log offset;
+				throw e;
+			}
+		}
 
-		private string DecodeOID(byte[] bytes)
+		byte[] ReadBytes(int length)
+		{
+			var result = new byte[length];
+			for (int i = 0; i < length; i++)
+				result[i] = ReadByte();
+			
+			return result;
+		}
+
+		public string ReadUtcTime(int length)
+		{
+			// "YYMMDD000000Z"
+			string date = Uno.Text.Utf8.GetString(ReadBytes(length));
+			var year = int.Parse("" + date[0] + date[1]);
+			var month = int.Parse("" + date[2] + date[3]);
+			var day = int.Parse("" + date[4] + date[5]);
+			var hour = int.Parse("" + date[6] + date[7]);
+			var minutes = int.Parse("" + date[8] + date[9]);
+			var seconds = int.Parse("" + date[10] + date[11]);
+			var t = new Uno.Time.ZonedDateTime(new Uno.Time.LocalDateTime(2000 + year, month, day, hour, minutes, seconds), Uno.Time.DateTimeZone.Utc);
+
+			return t.ToString();
+		}
+
+		public string DecodeOID(int length)
 		{
 			// 1.2.840.113549.1.1.11 sha256WithRSAEncryption(PKCS #1)
 			// 2A 86 48 86 F7 0D 01 01 0B
 			var result = "";
-			for(int i = 0; i < bytes.Length; i++)
+			for(int i = 0; i < length; i++)
 			{
-				var b = bytes[i];
+				var b = ReadByte();
 				//debug_log b + " " + string.Format("{0:X}", b);
 				if ((b & 0x80) == 0) 
 				{
@@ -209,7 +473,8 @@ namespace Fuse.Security
 
 						shift -= 7;
 						//if (shift < 0) 
-						b = bytes[++i];
+						++i;
+						b = ReadByte();
 					}
 					v >>= shift;
 					
@@ -235,7 +500,7 @@ namespace Fuse.Security
 
 					result += t;
 				}
-				if (i < bytes.Length - 1)
+				if (i < length - 1)
 					result += ".";
 			}
 

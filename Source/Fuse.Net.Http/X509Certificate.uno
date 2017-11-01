@@ -13,8 +13,8 @@ namespace Fuse.Security
 			Issuer = issuer;
 			Thumbprint = "thumbprint"; // sha1 of der
 			DerEncodedData = der;
-			var lol = new ASN1Tools();
-			lol.Decode(der);
+			var lol = new ASN1Tools(der);
+			lol.Decode();
 		}
 	}
 	public class X509Chain
