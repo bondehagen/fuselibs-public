@@ -10,11 +10,11 @@ namespace Fuse.Motion.Simulation.Test
 		[Test]
 		public void Decode()
 		{
-			var bytes = File.ReadAllBytes("c:/azurecert.der");
+			/*var bytes = File.ReadAllBytes("c:/azurecert.der");
 			var a = new X509Certificate(bytes);
 			var asn = new ASN1Tools(bytes);
-			debug_log asn.Decode().ToString();
-			Assert.IsTrue(true);
+			asn.Decode();
+			Assert.IsTrue(true);*/
 		}
 
 		[Test]
