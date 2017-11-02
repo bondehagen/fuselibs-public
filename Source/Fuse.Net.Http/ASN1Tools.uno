@@ -1,6 +1,8 @@
+
 using Uno;
-using Uno.Text;
 using Uno.Collections;
+using Uno.Text;
+using Fuse.Security.X509;
 
 namespace Fuse.Security
 {
@@ -44,36 +46,157 @@ namespace Fuse.Security
 		BMPString = 0x1E
 	}
 
-	public class Asn1Node
+
+	public class Asn1Node : IList<Asn1Node>
 	{
+		List<Asn1Node> _internalList = new List<Asn1Node>();
+		public void Insert(int index, Asn1Node item)
+		{
+			_internalList.Insert(index, item);
+		}
+        public void RemoveAt(int index)
+        {
+        	_internalList.RemoveAt(index);
+        }
+
+        public Asn1Node this[int index]
+        {
+            get { return _internalList[index]; }
+        }
+        public void Clear()
+        {
+        	_internalList.Clear();
+        }
+        public bool Remove(Asn1Node item)
+        {
+        	return _internalList.Remove(item);
+        }
+        public bool Contains(Asn1Node item)
+        {
+        	return _internalList.Contains(item);
+        }
+		public void Add(Asn1Node item)
+		{
+			_internalList.Add(item);
+		}
+		public IEnumerator<Asn1Node> GetEnumerator()
+		{
+			return _internalList.GetEnumerator();
+		}
+		public int Count { get { return _internalList.Count; } }
 		public Tag Tag { get; set; }
 
 		public int Length { get; set; }
-
 		public int ContentsLength { get; set; }
+		public byte[] Data { get; internal set; }
 
-		public List<Asn1Node> Children  { get; set; }
-
-		public string Value { get; set; }
-
-		public Asn1Node()
+		public Asn1Node(Tag tag, int contentsLength)
 		{
-			Children = new List<Asn1Node>();
+			Data = new byte[contentsLength];
+			Tag = tag;
+			ContentsLength = contentsLength;
 		}
 
-		public string ToString()
+		public ulong AsUInt64()
 		{
-			Asn1Node tree = this;
-			var sb = new StringBuilder();
-			List<Asn1Node> firstStack = new List<Asn1Node>();
-			firstStack.Add(tree);
+			var length = ContentsLength- 1;
+			ulong v = 0;
+			for (var i = 0; i < length; i++)
+			{
+				v |= (ulong)Data[i] << (length - i) * 8;
+			}
+			return v | Data[length];
+		}
 
-			List<List<Asn1Node>> childListStack = new List<List<Asn1Node>>();
-			childListStack.Add(firstStack);
+		public string AsHex()
+		{
+			var res = "";
+			for (var i = 0; i < ContentsLength; i++)
+			{
+				res += string.Format("{0:X}", Data[i]);
+			}
+			return res;
+		}
+
+		public bool AsBool()
+		{
+			if (Tag.Number != TagName.BOOLEAN)
+				throw new Exception("Wrong tag");
+
+			if (Data != null)
+				return Data[0] != 0x0;
+
+			return false;
+		}
+
+		public string AsString()
+		{
+			return Uno.Text.Utf8.GetString(Data);
+		}
+
+		public Uno.Time.ZonedDateTime AsDateTime()
+		{
+			// TODO: Add support for GeneralizedTime
+			// "YYMMDD000000Z"
+			string date = Uno.Text.Utf8.GetString(Data);
+			var year = int.Parse("" + date[0] + date[1]);
+			var month = int.Parse("" + date[2] + date[3]);
+			var day = int.Parse("" + date[4] + date[5]);
+			var hour = int.Parse("" + date[6] + date[7]);
+			var minutes = int.Parse("" + date[8] + date[9]);
+			var seconds = int.Parse("" + date[10] + date[11]);
+			var t = new Uno.Time.ZonedDateTime(new Uno.Time.LocalDateTime(2000 + year, month, day, hour, minutes, seconds), Uno.Time.DateTimeZone.Utc);
+
+			return t;
+		}
+
+		public Oid AsOid()
+		{
+			var result = "";
+			for (int i = 0; i < ContentsLength; i++)
+			{
+				var b = Data[i];
+				if ((b & 0x80) == 0)
+				{
+					if (b < 40)
+						result += b;
+					else
+						result += (b / 40) + "." + (b % 40);
+				}
+				else
+				{
+					int v = b & 0x7F;
+					var shift = 0;
+					do
+					{
+						b = Data[++i];
+						v <<= 7;
+						v |= b & 0x7F;
+						shift += 7;
+						if (shift > 24)
+							throw new Exception("Too long tag");
+
+					} while ((b & 0x80) != 0);
+					result += v;
+				}
+				if (i < ContentsLength - 1)
+					result += ".";
+			}
+
+			return new Oid(result);
+		}
+
+		public override string ToString()
+		{
+			var tree = this;
+			var sb = new StringBuilder();
+			var firstStack = new List<Asn1Node> { tree };
+
+			var childListStack = new List<List<Asn1Node>> { firstStack };
 
 			while (childListStack.Count > 0)
 			{
-				List<Asn1Node> childStack = childListStack[childListStack.Count - 1];
+				var childStack = childListStack[childListStack.Count - 1];
 
 				if (childStack.Count == 0)
 				{
@@ -89,21 +212,45 @@ namespace Fuse.Security
 					{
 						indent += (childListStack[i].Count > 0) ? "|  " : "   ";
 					}
-					var v = (tree.Value != null) ? " " + tree.Value : "";
-					sb.AppendLine(indent + "+- " + tree.Tag.ToString() + v);
+					var v = tree.GetSimpleValue();
+					sb.AppendLine(indent + "+- " + tree.Tag.ToString() + " " + v);
 
-					if (tree.Children.Count > 0)
+					if (tree.Count > 0)
 					{
 						var l = new List<Asn1Node>();
-						l.AddRange(tree.Children);
+						foreach(var i in tree)
+							l.Add(i);
+
 						childListStack.Add(l);
 					}
 				}
 			}
 			return sb.ToString();
 		}
+
+		private string GetSimpleValue()
+		{
+			switch (Tag.Number)
+			{
+				case TagName.OBJECT_ID:
+					return AsOid().ToString();
+				case TagName.BOOLEAN:
+					return AsBool().ToString();
+				case TagName.INTEGER:
+					return ContentsLength > 8 ? AsHex() : AsUInt64().ToString();
+				case TagName._NULL:
+					return "NULL";
+				case TagName.UTF8_STRING:
+				case TagName.IA5_STRING:
+				case TagName.PRINTABLE_STRING:
+					return AsString();
+				case TagName.UTC_TIME:
+					return AsDateTime().ToString();
+			}
+			return "Data [" + ContentsLength + "]";
+		}
 	}
-	
+
 	public struct Tag
 	{
 		public IdentifierClass IdentifierClass { get; set; }
@@ -118,9 +265,9 @@ namespace Fuse.Security
 			Number = (TagName)number;
 		}
 
-		public string ToString()
+		public override string ToString()
 		{
-			var tagName = (IdentifierClass == IdentifierClass.ContextSpecific) ? "[" +(int)Number+"]" : string.Format("{0}", Number);
+			var tagName = (IdentifierClass == IdentifierClass.ContextSpecific) ? "[" + (int)Number + "]" : string.Format("{0}", Number);
 			return string.Format("{2} {0} {1}", IdentifierClass, IsConstructed ? "constructed" : "primitive", tagName);
 		}
 	}
@@ -143,36 +290,32 @@ namespace Fuse.Security
 
 		public Asn1Node Decode()
 		{
-			var node = ReadNext();
-			debug_log "------------------------------";
-			debug_log node.ToString();
-			debug_log "------------------------------";
-			return node;
+			return ReadNext();
 		}
-		
+
 		void Print(string str)
 		{
 			var tabs = "";
 			for (var i = 0; i < _depth; i++)
 				tabs += "  ";
 
-			debug_log _currentOffset + ":d=" + _depth + "  hl=" + _currentHeaderLength + " l=" + _currentContentsLength + " " + tabs + str;
+		//	debug_log _currentOffset +":d=" + _depth + "  hl=" + _currentHeaderLength + " l=" + _currentContentsLength + " " + tabs + str;
 		}
 
-		int _currentOffset = 0;
+		/*int _currentOffset = 0;
 		int _currentHeaderLength = 0;
 		int _currentContentsLength = 0;
-		int _currentDepth = 0;
-		
+		int _currentDepth = 0;*/
+
 		Asn1Node ReadChildren(Asn1Node node)
 		{
 			_depth++;
-			var seqLength = 0;
-			while (seqLength < node.ContentsLength)
+			var aggregatedLength = 0;
+			while (aggregatedLength < node.ContentsLength)
 			{
 				var seqAsn1Node = ReadNext();
-				seqLength += seqAsn1Node.Length;
-				node.Children.Add(seqAsn1Node);
+				aggregatedLength += seqAsn1Node.Length;
+				node.Add(seqAsn1Node);
 			}
 			_depth--;
 			return node;
@@ -182,20 +325,15 @@ namespace Fuse.Security
 		{
 			if (offset >= _length)
 				return null;
-			
-			_currentOffset = offset;
-			var currentOffset = offset;
-			var node = new Asn1Node();
-			var tag = node.Tag = ReadTag();
-			node.ContentsLength = ReadLength();
-			_currentContentsLength = node.ContentsLength;
 
-			_currentHeaderLength = offset - currentOffset;
+			var startOffset = offset;
+			var node = new Asn1Node(ReadTag(), ReadLength());
+			var headerLength = offset - startOffset;
 
 			node = ReadContents(node);
 
-			node.Length = offset - currentOffset;
-			var totalRead = _currentHeaderLength + node.ContentsLength;
+			node.Length = offset - startOffset;
+			var totalRead = headerLength + node.ContentsLength;
 			if (node.Length != totalRead)
 				debug_log("WARNING: expected: " + totalRead + " but got: " + node.Length);
 
@@ -204,132 +342,83 @@ namespace Fuse.Security
 
 		Asn1Node ReadContents(Asn1Node node)
 		{
-			var found = false;
 			var tag = node.Tag;
 			var length = node.ContentsLength;
 			if (tag.IsConstructed)
 			{
-				switch(tag.Number)
+				switch (tag.Number)
 				{
 					case TagName.SEQUENCE:
 					case TagName.SET:
 						Print(tag.ToString());
-						node = ReadChildren(node);
-						found = true;
-						break;
+						return ReadChildren(node);
 
 					default:
 						if (tag.IdentifierClass == IdentifierClass.ContextSpecific)
 						{
 							Print(tag.ToString());
-							node = ReadChildren(node);
-							found = true;
+							return ReadChildren(node);
 						}
 						else
-						{
 							throw new Exception("Unknown tag");
-							Print("Unknown " + tag.ToString());
-							ReadBytes(node.ContentsLength);
-						}
 
 						break;
 				}
 			}
 			else if (tag.IsPrimitive)
 			{
-				switch(tag.Number)
+				switch (tag.Number)
 				{
 					case TagName.EOC:
 						throw new Exception("The end of content, not supported by DER encoding");
-
-					case TagName.BOOLEAN:
-						bool v = ReadByte() != 0x0;
-						Print(node.Value = v.ToString());
-						found = true;
-						break;
-
-					case TagName.INTEGER:
-						if (length > 8)
-						{
-							var res = "";
-							for (var i = 0; i < length; i++)
-							{
-								res += Uno.String.Format("{0:X}", ReadByte());
-							}
-							Print(node.Value = res);
-							found = true;
-						}
-						else
-						{
-							Print(node.Value = "" + ReadInteger(length));
-							found = true;
-						}
-						break;
-
+					
 					case TagName._NULL:
-						Print(node.Value = "NULL");
-						found = true;
-						break;
+						return node;
 
 					case TagName.OBJECT_ID:
-						var oid = DecodeOID(length);
-						string oidv = "";
-						if (!ObjectIdentifierTable.TryGetValue(oid, out oidv))
-						{
-							oidv = oid;
-						}
-						Print(node.Value = oidv);
-						found = true;
-						break;
+					case TagName.BOOLEAN:
+					case TagName.INTEGER:
+						for (var i = 0; i < length; i++)
+							node.Data[i] = ReadByte();
+
+						return node;
 				}
 			}
-			if (!found)
-			switch(tag.Number)
+			switch (tag.Number)
 			{
-				case TagName.BIT_STRING:
-					Print(tag.ToString());
-					
-					if (tag.IsPrimitive)
-					{
-						int unusedBits = (int)(uint)ReadByte();
-						/*if (unusedBits > 0)
-						{
-							ReadNext(length - unusedBits);
-							ReadBytes(unusedBits);
-						}
-						else
-							ReadNext(length);*/
-					}/*else  {
-						throw new Exception("DER encoding only support primitive BIT_STRING");
-					}*/
-					ReadBytes(length -1);
-					found = true;
-					break;
-				case TagName.OCTET_STRING:
-					Print(tag.ToString());
-					if (tag.IsConstructed)
-						throw new Exception("DER encoding only support primitive OCTET_STRING");
-
-					ReadBytes(length);
-					//ReadNext(length);
-					found = true;
-					break;
-
-				case TagName.UTC_TIME:
-					var time = ReadUtcTime(length);
-					Print(node.Value = time);
-					found = true;
-					break;
-
 				case TagName.UTF8_STRING:
 				case TagName.IA5_STRING:
 				case TagName.PRINTABLE_STRING:
-					Print(node.Value = Uno.Text.Utf8.GetString(ReadBytes(length)));
-					found = true;
-					break;
+				case TagName.UTC_TIME:
+					for (var i = 0; i < length; i++)
+						node.Data[i] = ReadByte();
+
+					return node;
+
+				case TagName.BIT_STRING:
+					if (tag.IsConstructed)
+						throw new Exception("DER encoding only support primitive BIT_STRING");
+
+					int unusedBits = (int)(uint)ReadByte();
+					for (var i = 0; i < length - 1 - unusedBits; i++)
+						node.Data[i] = ReadByte();
+
+					for (var i = 0; i < unusedBits; i++)
+						ReadByte();
+
+					return node;
+
+				case TagName.OCTET_STRING:
+					if (tag.IsConstructed)
+						throw new Exception("DER encoding only support primitive OCTET_STRING");
+
+					for (var i = 0; i < length; i++)
+						node.Data[i] = ReadByte();
+
+					return node;
 			}
 
-			return node;
+			throw new Exception("Could not parse contents on offset " + offset);
 		}
 
 		public Tag ReadTag()
@@ -374,7 +463,7 @@ namespace Fuse.Security
 					return ReadByte();
 				}
 				else if (l == 2)
-				{ 
+				{
 					return ReadByte() << 8 | ReadByte();
 				}
 				else
@@ -390,90 +479,10 @@ namespace Fuse.Security
 			}
 			return l;
 		}
-		
-		public ulong ReadInteger(int length)
-		{
-			length--;
-			ulong v = 0;
-			for (var i = 0; i < length; i++)
-			{
-				v |=(ulong)ReadByte() << (length - i) * 8;
-			}
-			return v | (ulong)ReadByte();
-		}
-		
+
 		byte ReadByte()
 		{
-			try
-			{ 
-				return buffer[offset++];
-			}
-			catch(Exception e)
-			{
-				debug_log offset;
-				throw e;
-			}
-		}
-
-		byte[] ReadBytes(int length)
-		{
-			var result = new byte[length];
-			for (int i = 0; i < length; i++)
-				result[i] = ReadByte();
-			
-			return result;
-		}
-
-		public string ReadUtcTime(int length)
-		{
-			// "YYMMDD000000Z"
-			string date = Uno.Text.Utf8.GetString(ReadBytes(length));
-			var year = int.Parse("" + date[0] + date[1]);
-			var month = int.Parse("" + date[2] + date[3]);
-			var day = int.Parse("" + date[4] + date[5]);
-			var hour = int.Parse("" + date[6] + date[7]);
-			var minutes = int.Parse("" + date[8] + date[9]);
-			var seconds = int.Parse("" + date[10] + date[11]);
-			var t = new Uno.Time.ZonedDateTime(new Uno.Time.LocalDateTime(2000 + year, month, day, hour, minutes, seconds), Uno.Time.DateTimeZone.Utc);
-
-			return t.ToString();
-		}
-
-		public string DecodeOID(int length)
-		{
-			var result = "";
-			for(int i = 0; i < length; i++)
-			{
-				var b = ReadByte();
-				if ((b & 0x80) == 0) 
-				{
-					if (b < 40)
-						result += b;
-					else
-						result += (b / 40) + "." + (b % 40);
-				}
-				else
-				{
-					int v = b & 0x7F;
-					var shift = 0;
-					do
-					{
-						++i;
-						b = ReadByte();
-						v <<= 7;
-						v |= b & 0x7F;
-						shift += 7;
-						if (shift > 24)
-							throw new Exception("Too long tag");
-							
-					} while ((b & 0x80) != 0);
-					result += v;
-				}
-				if (i < length - 1)
-					result += ".";
-			}
-
-			return result;
+			return buffer[offset++];
 		}
 	}
 }

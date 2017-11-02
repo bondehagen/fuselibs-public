@@ -13,7 +13,7 @@ namespace Fuse.Motion.Simulation.Test
 			var bytes = File.ReadAllBytes("c:/azurecert.der");
 			var a = new X509Certificate(bytes);
 			var asn = new ASN1Tools(bytes);
-			asn.Decode();
+			debug_log asn.Decode().ToString();
 			Assert.IsTrue(true);
 		}
 
@@ -43,18 +43,18 @@ namespace Fuse.Motion.Simulation.Test
 		public void ReadInteger()
 		{
 			var asn = new ASN1Tools(new byte[] { 0x02 });
-			Assert.AreEqual(2, asn.ReadInteger(1));
+			Assert.AreEqual(2, asn.Decode().AsUInt64());
 
 			asn = new ASN1Tools(new byte[] { 0x01, 0x00, 0x01 });
-			Assert.AreEqual(65537, asn.ReadInteger(3));
+			Assert.AreEqual(65537, asn.Decode().AsUInt64());
 			
 			asn = new ASN1Tools(new byte[] { 0x13, 0x54, 0xCB, 0x8B });
-			Assert.AreEqual(324324235, asn.ReadInteger(4));
+			Assert.AreEqual(324324235, asn.Decode().AsUInt64());
 
 			asn = new ASN1Tools(new byte[] { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff });
 			//var bytes4 = new byte[] { 0x5A, 0x00, 0x04, 0x98, 0xAF, 0x9A, 0x64, 0x12, 0xB7, 0x63, 0x25, 0x17, 0x04, 0x00, 0x01, 0x00, 0x04, 0x98, 0xAF };
 			ulong lol = 0xffffffffffffffff;
-			Assert.AreEqual(lol, asn.ReadInteger(8));
+			Assert.AreEqual(lol, asn.Decode().AsUInt64());
 		}
 		
 		[Test]
@@ -62,10 +62,10 @@ namespace Fuse.Motion.Simulation.Test
 		{
 			var bytes = new byte[] { 0x31, 0x36, 0x30, 0x39, 0x32, 0x38, 0x32, 0x31, 0x34, 0x35, 0x32, 0x33, 0x5A };
 			var asn = new ASN1Tools(bytes);
-			Assert.AreEqual("2016-09-28T21:45:23UTC+00:00:00", asn.ReadUtcTime(13));
+			Assert.AreEqual("2016-09-28T21:45:23UTC+00:00:00", asn.Decode().AsDateTime().ToString());
 
 			asn = new ASN1Tools(new byte[] { 0x31, 0x38, 0x30, 0x35, 0x30, 0x37, 0x31, 0x37, 0x30, 0x33, 0x33, 0x30, 0x5A });
-			Assert.AreEqual("2018-05-07T17:03:30UTC+00:00:00", asn.ReadUtcTime(13));
+			Assert.AreEqual("2018-05-07T17:03:30UTC+00:00:00", asn.Decode().AsDateTime().ToString());
 		}
 
 		[Test]
