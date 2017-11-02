@@ -28,7 +28,6 @@ public partial class App2
 		debug_log "ValidateServerCertificate";
 		debug_log certificate.Subject;
 		debug_log certificate.Issuer;
-		debug_log certificate.Thumbprint;
 		if (sslPolicyErrors == SslPolicyErrors.None)
 		{
 			// Good certificate.
@@ -61,7 +60,7 @@ public partial class App2
 		if (!this.isBusy.IsActive)
 		{
 			this.isBusy.IsActive = true;
-			var request = new Request("https://uno-http-testing.azurewebsites.net/cors/delay/1500");
+			var request = new Request("https://fusetools.com");
 			_client.Send(request).Then(HandleResponse, Error);
 		}
 	}

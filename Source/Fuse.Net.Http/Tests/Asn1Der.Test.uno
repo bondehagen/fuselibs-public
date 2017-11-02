@@ -11,6 +11,7 @@ namespace Fuse.Motion.Simulation.Test
 		public void Decode()
 		{
 			var bytes = File.ReadAllBytes("c:/azurecert.der");
+			var a = new X509Certificate(bytes);
 			var asn = new ASN1Tools(bytes);
 			asn.Decode();
 			Assert.IsTrue(true);
@@ -70,7 +71,14 @@ namespace Fuse.Motion.Simulation.Test
 		[Test]
 		public void ReadObjectIdentifier()
 		{
+			// 1.2.840.113549.1.1.11 sha256WithRSAEncryption(PKCS #1)
+			// 2A 86 48 86 F7 0D 01 01 0B
+								// 86 48
+					// (6 * 128^1) + (72 * 128^0) = 840
 
+					// 86 F7 0D
+					// (6 * 128^2) + (119 * 128^1) + (13 * 128^0) = 113549
+					
 		}
 	}
 }
