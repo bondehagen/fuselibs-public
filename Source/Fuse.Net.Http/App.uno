@@ -11,7 +11,9 @@ public partial class App2
 	public App2()
 	{
 		_client = new HttpClient();
-		_client.ClientCertificates.Add(LoadClientCertificateFromBundle(null));
+		var bundle = Uno.IO.Bundle.Get();
+		//var bundleFile = bundle.GetFile("msdnmicrosoftcom.der");
+		//_client.ClientCertificates.Add(LoadClientCertificateFromBundle(bundleFile));
 		_client.ServerCertificateValidationCallback = ValidateServerCertificate;
 
 		InitializeUX();
@@ -26,8 +28,7 @@ public partial class App2
 	bool ValidateServerCertificate(X509Certificate certificate, X509Chain certificateChain, SslPolicyErrors sslPolicyErrors)
 	{
 		debug_log "ValidateServerCertificate";
-		debug_log certificate.Subject;
-		debug_log certificate.Issuer;
+		debug_log certificate.ToString();
 		if (sslPolicyErrors == SslPolicyErrors.None)
 		{
 			// Good certificate.

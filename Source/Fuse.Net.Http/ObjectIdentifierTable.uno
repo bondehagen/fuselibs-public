@@ -398,8 +398,8 @@ namespace Fuse.Security
 			d.Add("1.2.840.113549.3.7", "id_des_EDE3_CBC");
 
 			d.Add("1.3.6.1.5.5.7.1.1", "Authority Information Access");
-			d.Add("1.3.6.1.4.1.311.21.7", "OID_CERTIFICATE_TEMPLATE");
-			d.Add("1.3.6.1.4.1.311.21.10", "OID_APPLICATION_CERT_POLICIES");
+			d.Add("1.3.6.1.4.1.311.21.7", "CERTIFICATE_TEMPLATE");
+			d.Add("1.3.6.1.4.1.311.21.10", "APPLICATION_CERT_POLICIES");
 		}
 	}
 }

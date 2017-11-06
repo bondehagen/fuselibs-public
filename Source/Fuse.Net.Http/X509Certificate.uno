@@ -1,5 +1,6 @@
 using Uno;
 using Uno.Text;
+using Uno.Collections;
 using Fuse.Security.X509;
 
 namespace Fuse.Security
@@ -10,7 +11,6 @@ namespace Fuse.Security
 		public string Issuer { get; private set; }
 		public byte[] DerEncodedData { get; private set; } 
 
-		public X509Certificate(string subject, string issuer, byte[] der) {}
 		public X509Certificate(byte[] der)
 		{
 			DerEncodedData = der;
@@ -23,35 +23,47 @@ namespace Fuse.Security
 
 			Algorithm = asn1[1][0].AsOid().FriendlyName;
 			Signature = asn1[2].Data;
+			Extensions = new List<X509v3Extension>();
+			foreach (var extension in asn1[0][7][0])
+			{
+				Extensions.Add(new X509v3Extension(extension[0].AsOid(), true, extension[1].AsString()));
+			}
+
 			debug_log this.ToString();
 		}
 
 		public CertificateToBeSigned Certificate { get; private set; }
 		public string Algorithm { get; private set; }
 		public byte[] Signature { get; private set; }
-
+		public IList<X509v3Extension> Extensions { get; private set; }
+		
 		public override string ToString()
 		{
 			var sb = new StringBuilder();
-			sb.AppendLine("Certificate:");
-			sb.AppendLine("\tData:");
-			sb.AppendLine("\t\tVersion: " + Certificate.Version);
-			sb.AppendLine("\t\tSerial Number:");
-			sb.AppendLine("\t\t\t" + Certificate.SerialNumber);
-			sb.AppendLine("\tSignature Algorithm: " + Certificate.SignatureAlgorithm.FriendlyName);
-			sb.AppendLine("\t\tIssuer: " + Certificate.Issuer.Name);
+			sb.Append(Certificate.ToString());
+			sb.AppendLine("\tX509v3 extensions:");
+			foreach (var e in Extensions)
+				sb.AppendLine(e.ToString());
+			
+			sb.AppendLine("Signature Algorithm: " + Algorithm);
+			for (var i = 0; i < Signature.Length; i++)
+			{
+				if (i == 0 || i % 18 == 0)
+					sb.Append("\t");
 
-			sb.AppendLine("Public Key:");
-			sb.AppendLine(Certificate.SubjectPublicKeyInfo.Algorithm.Algorithm.FriendlyName);
-			sb.AppendLine(Certificate.SubjectPublicKeyInfo.SubjectPublicKey.Length + " bit");
+				sb.Append(string.Format("{0:X2}", Signature[i]));
+				if (i != Signature.Length - 1)
+					sb.Append(':');
+				else
+					sb.AppendLine("");
 
-			var o = "";
-			foreach (var b in Certificate.SubjectPublicKeyInfo.SubjectPublicKey)
-				o += string.Format("{0:X}:", b);
-
-			sb.AppendLine(o);
-			sb.AppendLine("Exponent: " + Certificate.SubjectPublicKeyInfo.Exponent);
-			return sb.ToString();
+				if ((i + 1) % 18 == 0)
+					sb.AppendLine("");
+			}
+			sb.AppendLine("-----BEGIN CERTIFICATE-----");
+			sb.AppendLine(Base64.GetString(DerEncodedData));
+			sb.AppendLine("-----END CERTIFICATE-----");
+			return  sb.ToString();
 		}
 	}
 
@@ -70,6 +82,22 @@ namespace Fuse.Security
 }
 namespace Fuse.Security.X509
 {
+	public class X509v3Extension
+	{
+		public X509v3Extension(Oid id, bool isCritical, string v)
+		{
+			Id = id;
+			IsCritical = isCritical;
+			Value = v;
+		}
+		public Oid Id { get; private set; }
+		public bool IsCritical { get; private set; }
+		public string Value { get; private set; }
+		public override string ToString()
+		{
+			return Id.FriendlyName + " " + Value;
+		}
+	}
 	public class CertificateToBeSigned
 	{
 		public CertificateToBeSigned(int version, string serialNumber, Oid signatureAlgorithm,
@@ -92,10 +120,77 @@ namespace Fuse.Security.X509
 		public Validity Validity { get; private set; }
 		public RelativeDistinguishedName Subject { get; private set; }
 		public SubjectPublicKeyInfo SubjectPublicKeyInfo { get; private set; }
+
+		public override string ToString()
+		{
+			var sb = new StringBuilder();
+			sb.AppendLine("Certificate:");
+			sb.AppendLine("\tData:");
+			sb.AppendLine("\t\tVersion: " + Version);
+			sb.AppendLine("\t\tSerial Number:");
+			sb.AppendLine("\t\t\t" + SerialNumber);
+			sb.AppendLine("\tSignature Algorithm: " + SignatureAlgorithm.FriendlyName);
+			sb.AppendLine("\t\tIssuer: " + Issuer.Name);
+			sb.AppendLine("\t\tValidity");
+			sb.AppendLine("\t\t\tNot Before: " + Validity.NotBefore.ToString());
+			sb.AppendLine("\t\t\tNot After : " + Validity.NotAfter.ToString());
+			sb.AppendLine("\t\tSubject : " + Subject.Name);
+			sb.AppendLine("\t\tSubject Public Key Info:");
+			sb.AppendLine("\t\t\tPublic Key Algorithm: " + SubjectPublicKeyInfo.Algorithm.Algorithm.FriendlyName);
+			sb.AppendLine("\t\t\t\tPublic-Key: (" + ((SubjectPublicKeyInfo.SubjectPublicKey.Length - 1) * 8) + " bit)");
+			sb.AppendLine("\t\t\t\tModulus:");
+			for (var i = 0; i < SubjectPublicKeyInfo.SubjectPublicKey.Length; i++)
+			{
+				if (i == 0 || i % 15 == 0)
+					sb.Append("\t\t\t\t\t");
+
+				sb.Append(string.Format("{0:X2}", SubjectPublicKeyInfo.SubjectPublicKey[i]));
+				if (i != SubjectPublicKeyInfo.SubjectPublicKey.Length - 1)
+					sb.Append(':');
+				else
+					sb.AppendLine("");
+
+				if ((i + 1) % 15 == 0)
+					sb.AppendLine("");
+			}
+			sb.AppendLine("\t\t\t\tExponent: " + SubjectPublicKeyInfo.Exponent);
+			return sb.ToString();
+		}
 	}
 
 	public class RelativeDistinguishedName
 	{
+		static IDictionary<string, string> DistinguishedNames = new Dictionary<string, string>
+		{
+			{ "2.5.4.3", "cn" },
+			{ "2.5.4.4", "sn" },
+			{ "2.5.4.5", "serialNumber" },
+			{ "2.5.4.6", "c" },
+			{ "2.5.4.7", "l" },
+			{ "2.5.4.8", "st" },
+			{ "2.5.4.9", "street" },
+			{ "2.5.4.10", "o" },
+			{ "2.5.4.11", "ou" },
+			{ "2.5.4.12", "title" },
+			{ "2.5.4.13", "description" },
+			{ "2.5.4.14", "searchGuide" },
+			{ "2.5.4.15", "businessCategory" },
+			{ "2.5.4.16", "postalAddress" },
+			{ "2.5.4.17", "postalCode" },
+			{ "2.5.4.18", "postOfficeBox" },
+			{ "2.5.4.19", "physicalDeliveryOfficeName" },
+			{ "2.5.4.20", "telephoneNumber" },
+			{ "2.5.4.27", "destinationIndicator" },
+			{ "2.5.4.31", "member" },
+			{ "2.5.4.32", "owner" },
+			{ "2.5.4.41", "name" },
+			{ "2.5.4.42", "givenName" },
+			{ "2.5.4.43", "initials" },
+			{ "2.5.4.44", "generationQualifier" },
+			{ "2.5.4.49", "distinguishedName" },
+			{ "2.5.4.46", "dnQualifier" }
+		};
+
 		public RelativeDistinguishedName(Asn1Node datacollection)
 		{
 			RawData = datacollection.Data;
@@ -105,8 +200,12 @@ namespace Fuse.Security.X509
 				var node = datacollection[i][0];
 				var oid = node[0].AsOid();
 				var v = node[1].AsString();
-				Name += oid.FriendlyName + "=" + v;
-				if (i < datacollection.Count)
+				var key = "";
+				if (!DistinguishedNames.TryGetValue(oid.Value, out key))
+					key = oid.FriendlyName;
+
+				Name += key.ToUpper() + "=" + v;
+				if (i < datacollection.Count-1)
 					Name += ", ";
 			}
 		}

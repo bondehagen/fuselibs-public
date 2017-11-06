@@ -113,7 +113,7 @@ namespace Fuse.Security
 			var res = "";
 			for (var i = 0; i < ContentsLength; i++)
 			{
-				res += string.Format("{0:X}", Data[i]);
+				res += string.Format("{0:X2}", Data[i]);
 			}
 			return res;
 		}
@@ -350,13 +350,13 @@ namespace Fuse.Security
 				{
 					case TagName.SEQUENCE:
 					case TagName.SET:
-						Print(tag.ToString());
+						//Print(tag.ToString());
 						return ReadChildren(node);
 
 					default:
 						if (tag.IdentifierClass == IdentifierClass.ContextSpecific)
 						{
-							Print(tag.ToString());
+							//Print(tag.ToString());
 							return ReadChildren(node);
 						}
 						else
@@ -365,27 +365,17 @@ namespace Fuse.Security
 						break;
 				}
 			}
-			else if (tag.IsPrimitive)
-			{
-				switch (tag.Number)
-				{
-					case TagName.EOC:
-						throw new Exception("The end of content, not supported by DER encoding");
-					
-					case TagName._NULL:
-						return node;
-
-					case TagName.OBJECT_ID:
-					case TagName.BOOLEAN:
-					case TagName.INTEGER:
-						for (var i = 0; i < length; i++)
-							node.Data[i] = ReadByte();
-
-						return node;
-				}
-			}
 			switch (tag.Number)
 			{
+				case TagName.EOC:
+					throw new Exception("The end of content, not supported by DER encoding");
+					
+				case TagName._NULL:
+					return node;
+
+				case TagName.OBJECT_ID:
+				case TagName.BOOLEAN:
+				case TagName.INTEGER:
 				case TagName.UTF8_STRING:
 				case TagName.IA5_STRING:
 				case TagName.PRINTABLE_STRING:
@@ -400,7 +390,8 @@ namespace Fuse.Security
 						throw new Exception("DER encoding only support primitive BIT_STRING");
 
 					int unusedBits = (int)(uint)ReadByte();
-					for (var i = 0; i < length - 1 - unusedBits; i++)
+					node.Data = new byte[(length - 1) - unusedBits];
+					for (var i = 0; i < (length - 1) - unusedBits; i++)
 						node.Data[i] = ReadByte();
 
 					for (var i = 0; i < unusedBits; i++)

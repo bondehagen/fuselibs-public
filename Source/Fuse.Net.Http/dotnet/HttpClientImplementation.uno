@@ -97,7 +97,7 @@ namespace Fuse.Net.Http
 		{
 			if (_client.ServerCertificateValidationCallback != null)
 			{
-				var c = new X509Certificate(certificate.Subject, certificate.Issuer, certificate.RawData);
+				var c = new X509Certificate(certificate.RawData);
 				return _client.ServerCertificateValidationCallback(c, new Fuse.Security.X509Chain(), (Fuse.Security.SslPolicyErrors)(int)sslPolicyErrors);
 			}
 			return false;
