@@ -47,7 +47,7 @@ public class HttpTest {
 			try {
 				URL url = urls[0];
 
-
+// TODO: READ https://stackoverflow.com/questions/1936872/how-to-keep-multiple-java-httpconnections-open-to-same-destination/1936965#1936965
 				InputStream stream = null;
 				HttpURLConnection connection = null;
 				String result = null;
@@ -89,7 +89,7 @@ public class HttpTest {
 
 									}*/
 
-									callback.onCheckServerTrusted(cert.getSubjectDN().getName(), cert.getEncoded());
+									callback.onCheckServerTrusted(cert.getEncoded());
 								}
 								public X509Certificate[] getAcceptedIssuers() {
 									return new X509Certificate[0];
@@ -103,23 +103,23 @@ public class HttpTest {
 							sslConnection.setSSLSocketFactory(context.getSocketFactory());
 						}
 						sslConnection.connect();
-					}
-					else
+						callback.onHeadersReceived(connection);
+					} else {
 						connection.connect();
-					//publishProgress(DownloadCallback.Progress.CONNECT_SUCCESS);
-					int responseCode = connection.getResponseCode();
-					if (responseCode != HttpURLConnection.HTTP_OK) {
-						throw new IOException("HTTP error code: " + responseCode);
+						callback.onHeadersReceived(connection);
 					}
+					
+					
+					//publishProgress(DownloadCallback.Progress.CONNECT_SUCCESS);
+
 					// Retrieve the response body as an InputStream.
 					stream = connection.getInputStream();
-
 
 					//publishProgress(DownloadCallback.Progress.GET_INPUT_STREAM_SUCCESS, 0);
 
 					if (stream != null) {
 						result = readStream(stream);
-						callback.onDone(result);
+						//callback.onDone(result);
 						//copyInputStreamToFile(stream, System.out);
 					}
 				} finally {
@@ -132,11 +132,10 @@ public class HttpTest {
 				}
 
 			} catch (MalformedURLException e) {
-				e.printStackTrace();
+				callback.onFailure(e.getMessage());
 			} catch (IOException e) {
-				e.printStackTrace();
+				callback.onFailure(e.getMessage());
 			}
-
 
 			return 0L;
 		}

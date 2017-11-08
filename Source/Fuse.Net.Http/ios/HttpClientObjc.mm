@@ -21,7 +21,7 @@
 	return self;
 }
 
-- (void)connect:(NSString *)url onCompleteHandler:(void (^)(NSString *))completeHandler onCheckServerCertificate:(void (^)(uint8_t *, NSUInteger))checkServerCertificate {
+- (void)connect:(NSString *)url onCompleteHandler:(void (^)(NSInteger, NSString *))completeHandler onCheckServerCertificate:(void (^)(uint8_t *, NSUInteger))checkServerCertificate {
 
 	self.onCheckServerCertificate = checkServerCertificate;
 
@@ -41,6 +41,9 @@
 		}
 		else
 		{
+			NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *) response;
+    		/*NSLog(@"response status code: %ld", (long)[httpResponse statusCode]);
+    		NSDictionary *allHeaderFields;*/
 			NSString *requestReply = [[NSString alloc] initWithData:data encoding:NSASCIIStringEncoding];
 			NSLog(@"requestReply: %@", requestReply);
 			completeHandler(requestReply);
@@ -53,6 +56,7 @@
 
 - (void)dealloc {
 	//[super dealloc];
+	NSLog(@"dealloc");
 }
 
 - (void)URLSession:(NSURLSession *)session
@@ -79,7 +83,6 @@ didCompleteWithError:(NSError *)error
 - (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition disposition, NSURLCredential *credential))completionHandler
 {
 	//https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/URLLoadingSystem/Articles/AuthenticationChallenges.html#//apple_ref/doc/uid/TP40009507-SW1
-			//https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/URLLoadingSystem/Articles/AuthenticationChallenges.html
 	NSLog(@"didReceiveChallenge");
 	
 	SecTrustRef serverTrust = challenge.protectionSpace.serverTrust;

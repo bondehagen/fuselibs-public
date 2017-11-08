@@ -5,13 +5,12 @@ using Fuse.Security;
 
 namespace Fuse.Net.Http
 {
-	extern(!android && !iOS)
+	extern(!android && !iOS && !DotNet)
 	public static class LoadCertificateFromBytes
 	{
 		public static X509Certificate Load(byte[] data)
 		{
-			throw new Exception("LoadCertificateFromBytes is not implemented on this platform");
-			return null;
+			return new X509Certificate(data);
 		}
 	}
 }

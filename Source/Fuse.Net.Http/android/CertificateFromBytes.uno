@@ -2,7 +2,7 @@ using Uno;
 using Uno.Threading;
 using Uno.Collections;
 using Uno.Compiler.ExportTargetInterop;
-using Fuse.Scripting;
+using Fuse.Security;
 
 namespace Fuse.Net.Http
 {
@@ -16,10 +16,10 @@ namespace Fuse.Net.Http
 		public static X509Certificate Load(byte[] data)
 		{
 			var buf = ForeignDataView.Create(data);
-			var inputStream = MakeBufferInputStream(buf);
-			var jcert = LoadCertificateFromInputStream(inputStream);
+			//var inputStream = MakeBufferInputStream(buf);
+			var jcert = LoadCertificateFromInputStream(buf);
 			// TODO: Extract details here
-			return null;
+			return new X509Certificate(data);
 		}
 
 		[Foreign(Language.Java)]
@@ -27,7 +27,7 @@ namespace Fuse.Net.Http
 		@{
 			try
 			{
-				com.fuse.android.ByteBufferInputStream inputStream = new com.fuse.android.ByteBufferInputStream((com.uno.UnoBackedByteBuffer)buf);
+				com.fuse.android.ByteBufferInputStream inputStream = (com.fuse.android.ByteBufferInputStream)buf;
 				CertificateFactory fact = CertificateFactory.getInstance("X.509");
 				X509Certificate cer = (X509Certificate)fact.generateCertificate((InputStream)inputStream);
 				return cer;

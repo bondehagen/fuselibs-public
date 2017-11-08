@@ -11,18 +11,16 @@ public partial class App2
 	public App2()
 	{
 		_client = new HttpClient();
-		var bundle = Uno.IO.Bundle.Get();
-		//var bundleFile = bundle.GetFile("msdnmicrosoftcom.der");
-		//_client.ClientCertificates.Add(LoadClientCertificateFromBundle(bundleFile));
+		_client.ClientCertificates.Add(LoadClientCertificateFromBundle());
 		_client.ServerCertificateValidationCallback = ValidateServerCertificate;
 
 		InitializeUX();
 	}
 
-	X509Certificate LoadClientCertificateFromBundle(BundleFile bundleFile)
+	X509Certificate LoadClientCertificateFromBundle()
 	{
-		//var foo = LoadCertificateFromBytes.Load(bundleFile.ReadAllBytes());
-		return null;
+		var bundleFile = Bundle.Get().GetFile("msdnmicrosoftcom.der");
+		return LoadCertificateFromBytes.Load(bundleFile.ReadAllBytes());
 	}
 
 	bool ValidateServerCertificate(X509Certificate certificate, X509Chain certificateChain, SslPolicyErrors sslPolicyErrors)
@@ -70,7 +68,10 @@ public partial class App2
 	{
 		if (response != null)
 		{
+			debug_log response.StatusCode;
 			debug_log response.ContentLength;
+			foreach (var item in response.GetHeaders())
+				debug_log item.Key + " " + item.Value; 
 			//response.Body.AsString().Then(PrintString, Error);
 			//response.Body.AsStream().Then(ConvertStream, Error);
 		}

@@ -1,6 +1,9 @@
 package com.fusetools.http;
 
+import java.net.HttpURLConnection;
+
 public interface MyCallback {
-    void onDone(String response);
-    boolean onCheckServerTrusted(String subject, byte[] asn1derEncodedCert);
+	void onHeadersReceived(HttpURLConnection urlConnection);
+    void onFailure(String response);
+    boolean onCheckServerTrusted(byte[] asn1derEncodedCert);
 }

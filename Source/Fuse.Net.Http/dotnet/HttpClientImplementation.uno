@@ -36,8 +36,6 @@ namespace Fuse.Net.Http
 			handler.ClientCertificates.Add(new X509Certificate2("cert.crt"));
 			var client = new HttpClient(handler);
 
-
-
 			using (var handler = new WebRequestHandler())
 			{
 			    handler.ServerCertificateValidationCallback = ...
@@ -69,9 +67,9 @@ namespace Fuse.Net.Http
 			
 			ServicePointManager.ServerCertificateValidationCallback = Validate;
 			
-			var task = client.SendAsync(new HttpRequestMessage(HttpMethod.Get, request.Url), HttpCompletionOption.ResponseContentRead, token);
-			debug_log "sent";
+			var task = client.SendAsync(new HttpRequestMessage(HttpMethod.Get, request.Url), HttpCompletionOption.ResponseHeadersRead, token);
 			task.ContinueWith(Continue);
+			//request.Dispose();
 
 			return _promise;
 		}
@@ -81,9 +79,8 @@ namespace Fuse.Net.Http
 			debug_log "IsCompleted " + task.IsCompleted;
 			if (!task.IsFaulted && !task.IsCanceled)
 			{
-				debug_log "got response";
-				debug_log task.Result.StatusCode.ToString();
-				_promise.Resolve(new Response());
+				// task.Result.Versoin, task.Result.StatusCode, task.Result.Headers, new BodyAccessor(task.Result)
+				_promise.Resolve(new Response(new ResponseImplementation()));
 			}
 			else
 			{
@@ -109,11 +106,9 @@ namespace System.Security.Cryptography.X509Certificates
 	[DotNetType("System.Security.Cryptography.X509Certificates.X509Certificate2")]
 	extern(DOTNET && !HOST_MAC) public class X509Certificate2
 	{
-		public extern string Subject { get; }
-		public extern string Issuer { get; }
 		public extern byte[] RawData { get; }
-		public extern virtual string GetCertHashString();
-
+		public extern void Import(byte[] rawData);
+		// TODO: public extern void Import(byte[] rawData, string password, X509KeyStorageFlags keyStorageFlags)
 	}
 
 	[DotNetType("System.Security.Cryptography.X509Certificates.X509Chain")]
