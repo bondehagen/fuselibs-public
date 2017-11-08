@@ -5,7 +5,7 @@ namespace Fuse.Net.Http
 {
 	using Foundation;
 	using Security;
-	
+
 	extern(DOTNET && HOST_MAC) class HttpClientImplementation : NSUrlSessionDelegate
 	{
 		Promise<Response> _response;
@@ -38,36 +38,32 @@ namespace Fuse.Net.Http
 			return _response;
 		}
 
-		void Callback(NSData data, NSUrlResponse response, NSError error) 
+		void Callback(NSData data, NSUrlResponse urlResponse, NSError error) 
 		{
 			try
 			{
-				debug_log "Log:!!";
-				if (response == null)
+				if (urlResponse != null)
 				{
-					debug_log "response is null";
-				}
-				else
-				{
-					var httpResponse = new Response();
-					httpResponse.ContentLength = response.ExpectedContentLength.ToString();
+					var httpUrlResponse = (NSHttpUrlResponse)urlResponse;
+					var en = httpUrlResponse.AllHeaderFields;
+					foreach (var key in en.Keys)
+					{
+						var v = en[key];
+						debug_log "" + key.GetType() + " " + v.GetType();
+					}
+
+					var httpResponse = new Response(new ResponseImplementation(0, httpUrlResponse.StatusCode, ""));
 					_response.Resolve(httpResponse);
 					return;
 				}
 
-				if (data == null)
-					debug_log "data is null";
-				/*else
-					debug_log data.ToString();*/
 				//response.Dispose();
 				_response.Reject(new Exception("Something wrong happened"));
 			}
 			catch (Exception e)
 			{
-				debug_log "Errorlol " + e.Message;
 				_response.Reject(e);
 			}
-			debug_log "log end!";
 		}
 		
 		public override void DidBecomeInvalid(NSUrlSession session, NSError error)
@@ -82,15 +78,8 @@ namespace Fuse.Net.Http
 
 		public override void DidReceiveChallenge(NSUrlSession session, NSUrlAuthenticationChallenge challenge, Action<NSUrlSessionAuthChallengeDisposition, NSUrlCredential> completionHandler)
 		{
-			debug_log "DidReceiveChallenge";
 			if (_client.ServerCertificateValidationCallback != null)
 			{
-				
-				/*
-				SecTrustRef serverTrust = challenge.protectionSpace.serverTrust;
-    			SecCertificateRef certificate = SecTrustGetCertificateAtIndex(serverTrust, 0);
-SecCertificateCopySubjectSummary(secCertificateRef)
-				*/
 				var secCertificateRef = challenge.ProtectionSpace.ServerSecTrust;
 				var protectionSpace = challenge.ProtectionSpace;
 				//debug_log protectionSpace.Host;
@@ -99,17 +88,18 @@ SecCertificateCopySubjectSummary(secCertificateRef)
 				var certificate = secTrust[0];
  				var x509 = certificate.ToX509Certificate2();
 				var c = new Fuse.Security.X509Certificate(x509.RawData);
-				var restult = _client.ServerCertificateValidationCallback(c, new Fuse.Security.X509Chain(), (SslPolicyErrors)(int)0);
-			}
-
-			
-			if(challenge.ProtectionSpace.AuthenticationMethod == "NSURLAuthenticationMethodServerTrust")
-			{
-				if(challenge.ProtectionSpace.Host == "uno-http-testing.azurewebsites.net")
+				var result = _client.ServerCertificateValidationCallback(c, new Fuse.Security.X509Chain(), (SslPolicyErrors)(int)0);
+				if (result)
 				{
-					var credential = NSUrlCredential.FromTrust(challenge.ProtectionSpace.ServerSecTrust);
-					completionHandler(NSUrlSessionAuthChallengeDisposition.UseCredential, credential);
-					return;
+					if(protectionSpace.AuthenticationMethod == "NSURLAuthenticationMethodServerTrust")
+					{
+						//if(challenge.ProtectionSpace.Host == "uno-http-testing.azurewebsites.net")
+						//{
+							var credential = NSUrlCredential.FromTrust(challenge.ProtectionSpace.ServerSecTrust);
+							completionHandler(NSUrlSessionAuthChallengeDisposition.UseCredential, credential);
+							return;
+						//}
+					}
 				}
 			}
 			completionHandler(NSUrlSessionAuthChallengeDisposition.CancelAuthenticationChallenge, null);

@@ -5,7 +5,7 @@
   ],
   "Includes": [
     "*",
-    "msdnmicrosoftcom.der:Bundle",
+    //"msdnmicrosoftcom.der:Bundle",
     "android/HttpTest.java:Java:Android",
     "android/MyCallback.java:Java:Android",
     "ios/HttpClientObjc.h:ObjCHeader:iOS",

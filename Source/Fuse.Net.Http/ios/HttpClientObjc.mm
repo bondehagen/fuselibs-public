@@ -6,7 +6,7 @@
 
 @interface HttpClientObjc ()
 
-	@property (nonatomic, copy) void (^onCheckServerCertificate)(uint8_t *, NSUInteger);
+	@property (nonatomic, copy) BOOL (^onCheckServerCertificate)(uint8_t *, NSUInteger);
 
 @end
 
@@ -21,7 +21,7 @@
 	return self;
 }
 
-- (void)connect:(NSString *)url onCompleteHandler:(void (^)(NSInteger, NSString *))completeHandler onCheckServerCertificate:(void (^)(uint8_t *, NSUInteger))checkServerCertificate {
+- (void)connect:(NSString *)url onCompleteHandler:(void (^)(NSHTTPURLResponse *))completeHandler onCheckServerCertificate:(BOOL (^)(uint8_t *, NSUInteger))checkServerCertificate {
 
 	self.onCheckServerCertificate = checkServerCertificate;
 
@@ -30,26 +30,28 @@
 	//[request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
 	//[request setValue:@"application/json" forHTTPHeaderField:@"Accept"];
 	NSURLSessionConfiguration *sessionConfiguration = [NSURLSessionConfiguration defaultSessionConfiguration];
-
+	sessionConfiguration.timeoutIntervalForRequest = 5;
 	NSURLSession *session = [NSURLSession sessionWithConfiguration:sessionConfiguration delegate:self delegateQueue:Nil];
 
 	__block NSURLSessionDataTask *task = [session dataTaskWithRequest:request completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+		NSLog(@"completeHandler block");
 		if (error!=nil)
 		{
+			NSLog(@"error %@" , error);
 			completeHandler(nil);
-			[task suspend];
 		}
 		else
 		{
-			NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *) response;
-    		/*NSLog(@"response status code: %ld", (long)[httpResponse statusCode]);
-    		NSDictionary *allHeaderFields;*/
-			NSString *requestReply = [[NSString alloc] initWithData:data encoding:NSASCIIStringEncoding];
-			NSLog(@"requestReply: %@", requestReply);
-			completeHandler(requestReply);
-			[task suspend];
+			if ([response isKindOfClass:[NSHTTPURLResponse class]]) {
+				NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *) response;
+				completeHandler(httpResponse);
+				/*NSInteger statusCode = [httpResponse statusCode];
+				NSDictionary *dictionary = [httpResponse allHeaderFields];
+				NSString *requestReply = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];*/
+			}
 		}
-
+		[task suspend];
+		[session finishTasksAndInvalidate];
 	}];
 	[task resume];
 }
@@ -63,7 +65,8 @@
 			  task:(NSURLSessionTask *)task
 didCompleteWithError:(NSError *)error
 {
-
+	NSLog(@"Error %@", error);
+	[session finishTasksAndInvalidate];
 }
 
 - (void)URLSession:(NSURLSession *)session
@@ -71,20 +74,25 @@ didCompleteWithError:(NSError *)error
 		willPerformHTTPRedirection:(NSHTTPURLResponse *)redirectResponse
 		newRequest:(NSURLRequest *)request
 		completionHandler:(void (^)(NSURLRequest *))completionHandler {
+	NSLog(@"redirect?");
 	// https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/URLLoadingSystem/Articles/RequestChanges.html
 	NSURLRequest *newRequest = request;
-	if (redirectResponse) {
+	/*if (redirectResponse) {
 		newRequest = nil;
-	}
+	}*/
 
 	completionHandler(newRequest);
 }
 
-- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition disposition, NSURLCredential *credential))completionHandler
+- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge
+	completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition disposition, NSURLCredential *credential))completionHandler
 {
 	//https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/URLLoadingSystem/Articles/AuthenticationChallenges.html#//apple_ref/doc/uid/TP40009507-SW1
 	NSLog(@"didReceiveChallenge");
-	
+	NSURLSessionAuthChallengeDisposition disposition = NSURLSessionAuthChallengePerformDefaultHandling;
+	__block NSURLCredential *credential = nil;
+	completionHandler(disposition, credential);
+/*	
 	SecTrustRef serverTrust = challenge.protectionSpace.serverTrust;
     SecCertificateRef certificate = SecTrustGetCertificateAtIndex(serverTrust, 0);
 	
@@ -94,9 +102,9 @@ didCompleteWithError:(NSError *)error
     CFDataRef dataref = SecCertificateCopyData(certificate);
     
     NSData* data = CFBridgingRelease(dataref);
-	self.onCheckServerCertificate((uint8_t *)[data bytes], [data length]);
+	BOOL res = self.onCheckServerCertificate((uint8_t *)[data bytes], [data length]);
 
-	completionHandler(NSURLSessionAuthChallengeUseCredential, [NSURLCredential credentialForTrust:challenge.protectionSpace.serverTrust]);
+	completionHandler(NSURLSessionAuthChallengeUseCredential, [NSURLCredential credentialForTrust:challenge.protectionSpace.serverTrust]);*/
 }
 
 /*
@@ -121,26 +129,14 @@ didCompleteWithError:(NSError *)error
 }
 
 #pragma mark - NSURLSessionDelegate
-
+*/
 - (void)URLSession:(NSURLSession *)session
 didBecomeInvalidWithError:(NSError *)error
 {
-	if (self.sessionDidBecomeInvalid) {
-		self.sessionDidBecomeInvalid(session, error);
-	}
-
-	[self.session getTasksWithCompletionHandler:^(NSArray *dataTasks, NSArray *uploadTasks, NSArray *downloadTasks) {
-		NSArray *tasks = [@[dataTasks, uploadTasks, downloadTasks] valueForKeyPath:@"@unionOfArrays.self"];
-		for (NSURLSessionTask *task in tasks) {
-			[task removeObserver:self forKeyPath:NSStringFromSelector(@selector(state)) context:AFTaskStateChangedContext];
-		}
-
-		[self removeAllDelegates];
-	}];
-
-	[[NSNotificationCenter defaultCenter] postNotificationName:AFURLSessionDidInvalidateNotification object:session];
+    NSLog(@"didBecomeInvalidWithError %@", error);
+    [session finishTasksAndInvalidate];
 }
-
+/*
 - (void)URLSession:(NSURLSession *)session
 didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge
  completionHandler:(void (^)(NSURLSessionAuthChallengeDisposition disposition, NSURLCredential *credential))completionHandler

@@ -104,8 +104,8 @@ namespace Fuse.Net.Http
 namespace System.Security.Cryptography.X509Certificates
 {
 	[DotNetType("System.Security.Cryptography.X509Certificates.X509Certificate2")]
-	extern(DOTNET && !HOST_MAC) public class X509Certificate2
-	{
+	extern(DOTNET) public class X509Certificate2
+	{	
 		public extern byte[] RawData { get; }
 		public extern void Import(byte[] rawData);
 		// TODO: public extern void Import(byte[] rawData, string password, X509KeyStorageFlags keyStorageFlags)

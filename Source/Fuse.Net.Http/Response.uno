@@ -3,21 +3,30 @@ using Uno.Collections;
 
 namespace Fuse.Net.Http
 {
-	extern(!Android) internal class ResponseImplementation
+	extern(!Android && !ios) internal class ResponseImplementation
 	{
+		int _statusCode;
+		string _headers;
+
+		public ResponseImplementation() {}
+		public ResponseImplementation(int version, int statusCode, string headers)
+		{
+			_statusCode = statusCode;
+			_headers = headers;
+		}
 		public int GetStatusCode()
 		{
-			return 0;			
+			return _statusCode;		
 		}
 
 		public IEnumerable<string> GetHeader(string key)
 		{
-			return null;
+			return new string[0];
 		}
 		
 		public IDictionary<string, IEnumerable<string>> GetHeaders()
 		{
-			return null;
+			return new Dictionary<string, IEnumerable<string>>();
 		}
 	}
 	public class Response

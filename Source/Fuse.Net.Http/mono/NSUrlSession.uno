@@ -16,6 +16,13 @@ namespace Foundation
 	extern(DOTNET && HOST_MAC) public class NSObject
 	{
 	}
+	
+	[DotNetType("Foundation.NSDictionary")]
+	extern(DOTNET && HOST_MAC) public class NSDictionary
+	{
+		public extern NSObject[] Keys { get; }
+		public extern NSObject this[NSObject key] { get; }
+	}
 
 	[DotNetType("Foundation.NSUrl")]
 	extern(DOTNET && HOST_MAC) public class NSUrl
@@ -68,8 +75,13 @@ namespace Foundation
 
 	[DotNetType("Foundation.NSUrlResponse")]
 	extern(DOTNET && HOST_MAC) internal class NSUrlResponse
+	{}
+	
+	[DotNetType("Foundation.NSHttpUrlResponse")]
+	extern(DOTNET && HOST_MAC) internal class NSHttpUrlResponse : NSUrlResponse
 	{
-		public extern long ExpectedContentLength { get; }
+		public extern int StatusCode { get; }
+		public extern NSDictionary AllHeaderFields { get; }
 	}
  
 	[DotNetType("Foundation.NSError")]
@@ -158,16 +170,5 @@ namespace Security
 		public extern Foundation.NSData GetSerialNumber();
 
 		//public static extern nint GetTypeID();
-	}
-}
-namespace System.Security.Cryptography.X509Certificates
-{
-	[DotNetType("System.Security.Cryptography.X509Certificates.X509Certificate2")]
-	extern(DOTNET && HOST_MAC) public class X509Certificate2
-	{
-		public extern string Subject { get; }
-		public extern string Issuer { get; }
-		public extern byte[] RawData { get; }
-		public extern virtual string GetCertHashString();
 	}
 }

@@ -11,7 +11,7 @@ public partial class App2
 	public App2()
 	{
 		_client = new HttpClient();
-		_client.ClientCertificates.Add(LoadClientCertificateFromBundle());
+		//_client.ClientCertificates.Add(LoadClientCertificateFromBundle());
 		_client.ServerCertificateValidationCallback = ValidateServerCertificate;
 
 		InitializeUX();
@@ -29,28 +29,9 @@ public partial class App2
 		debug_log certificate.ToString();
 		if (sslPolicyErrors == SslPolicyErrors.None)
 		{
-			// Good certificate.
+			// do some validation
 			return true;
 		}
-
-		/*var localServerCert = LoadLocalServerCertificate();
-
-		bool certMatch = false; // Assume failure
-		byte[] certHash = certificate.GetCertHash();
-		if (certHash.Length == apiCertHash.Length)
-		{
-			certMatch = true; // Now assume success.
-			for (int idx = 0; idx < certHash.Length; idx++)
-			{
-				if (certHash[idx] != apiCertHash[idx])
-				{
-					certMatch = false; // No match
-					break;
-				}
-			}
-		}
-
-		return certMatch;*/
 		return false;
 	}
 
@@ -66,22 +47,30 @@ public partial class App2
 
 	void HandleResponse(Response response)
 	{
-		if (response != null)
+		try
 		{
-			debug_log response.StatusCode;
-			debug_log response.ContentLength;
-			foreach (var item in response.GetHeaders())
+			if (response != null)
 			{
-				debug_log item.Key;
-				foreach (var v in item.Value)
-					debug_log "  " + v;
+				debug_log response.StatusCode;
+				foreach (var item in response.GetHeaders())
+				{
+					debug_log item.Key;
+					foreach (var v in item.Value)
+						debug_log "  " + v;
+				}
+				//response.Body.AsString().Then(PrintString, Error);
+				//response.Body.AsStream().Then(ConvertStream, Error);
+				debug_log "header done";
 			}
-			//response.Body.AsString().Then(PrintString, Error);
-			//response.Body.AsStream().Then(ConvertStream, Error);
+			else
+			{
+				debug_log "response was null";
+			}
 		}
-		else
+		catch(Exception e)
 		{
-			debug_log "response was null";
+			debug_log e.Message;
+			debug_log e.StackTrace;
 		}
 		this.isBusy.IsActive = false;
 	}
