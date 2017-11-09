@@ -71,7 +71,11 @@ public partial class App2
 			debug_log response.StatusCode;
 			debug_log response.ContentLength;
 			foreach (var item in response.GetHeaders())
-				debug_log item.Key + " " + item.Value; 
+			{
+				debug_log item.Key;
+				foreach (var v in item.Value)
+					debug_log "  " + v;
+			}
 			//response.Body.AsString().Then(PrintString, Error);
 			//response.Body.AsStream().Then(ConvertStream, Error);
 		}
