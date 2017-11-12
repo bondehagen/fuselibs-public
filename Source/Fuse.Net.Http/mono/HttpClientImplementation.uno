@@ -20,21 +20,16 @@ namespace Fuse.Net.Http
 		
 		public Future<Response> SendAsync(Request request)
 		{
-			debug_log "Run";
 			var url = NSUrl.FromString(request.Url);
-			debug_log url.AbsoluteString;
-
 			var nsUrlRequest = NSUrlRequest.FromUrl(url);
 
 			using (var configuration = NSUrlSessionConfiguration.DefaultSessionConfiguration)
 			{
 				var _session = NSUrlSession.FromConfiguration(configuration, this, null);
 				//var _session = NSUrlSession.SharedSession;
-				debug_log "CreateDataTask";
 				var task = _session.CreateDataTask(nsUrlRequest, Callback);
 				task.Resume();
 			}
-			debug_log "done run";
 			return _response;
 		}
 
@@ -44,20 +39,14 @@ namespace Fuse.Net.Http
 			{
 				if (urlResponse != null)
 				{
-					var httpUrlResponse = (NSHttpUrlResponse)urlResponse;
-					var en = httpUrlResponse.AllHeaderFields;
-					foreach (var key in en.Keys)
-					{
-						var v = en[key];
-						debug_log "" + key.GetType() + " " + v.GetType();
-					}
-
-					var httpResponse = new Response(new ResponseImplementation(0, httpUrlResponse.StatusCode, ""));
-					_response.Resolve(httpResponse);
+					_response.Resolve(new Response(new ResponseImplementation((NSHttpUrlResponse)urlResponse, data)));
 					return;
 				}
-
-				//response.Dispose();
+				if (error != null)
+				{
+					_response.Reject(new Exception(error.ToString()));
+					return;
+				}
 				_response.Reject(new Exception("Something wrong happened"));
 			}
 			catch (Exception e)

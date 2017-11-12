@@ -28,8 +28,6 @@ namespace Fuse.Security
 			{
 				Extensions.Add(new X509v3Extension(extension[0].AsOid(), true, extension[1].AsString()));
 			}
-
-			//debug_log this.ToString();
 		}
 
 		public CertificateToBeSigned Certificate { get; private set; }

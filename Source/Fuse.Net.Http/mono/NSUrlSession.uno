@@ -90,7 +90,10 @@ namespace Foundation
 
 	[DotNetType("Foundation.NSData")]
 	extern(DOTNET && HOST_MAC) public class NSData
-	{}
+	{
+		public extern byte[] ToArray();
+		public extern override string ToString();
+	}
 
 	[DotNetType("Foundation.NSUrlSessionConfiguration")]
 	extern(DOTNET && HOST_MAC) internal class NSUrlSessionConfiguration : Uno.IDisposable

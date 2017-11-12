@@ -72,64 +72,18 @@ namespace Fuse.Net.Http
 				}
 			];
 		@}
+		public string GetBodyAsString()
+		{
+			return "";
+		}
 
+		public byte[] GetBodyAsByteArray()
+		{
+			return new byte [0];
+		}
 		public void Dispose()
 		{
 			_client = null;
 		}
-	}
-
-	
-	extern(iOS) internal class ResponseImplementation
-	{
-		ObjC.Object _response;
-		IDictionary<string, IEnumerable<string>> _headers;
-
-		internal ResponseImplementation(ObjC.Object response)
-		{
-			_headers = new Dictionary<string, IEnumerable<string>>();
-			_response = response;
-		}
-		
-		/*public int GetVersion()
-		{
-			return ((HttpURLConnection)_urlConnection).();
-		}*/
-		
-		[Foreign(Language.ObjC)]
-		public int GetStatusCode()
-		@{
-			NSHTTPURLResponse * httpResponse = (NSHTTPURLResponse *)@{ResponseImplementation:Of(_this)._response:Get()};
-			return [httpResponse statusCode];
-		@}
-
-		string _statusLine = "";
-
-		public IDictionary<string, IEnumerable<string>> GetHeaders()
-		{
-			debug_log GetHeaderFields();
-			return _headers;
-		}
-
-		[Foreign(Language.ObjC)]
-		string GetHeaderFields()
-		@{
-			NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)@{ResponseImplementation:Of(_this)._response:Get()};
-			NSDictionary *headers = [httpResponse allHeaderFields];
-			__block NSString * result = @"";
-			[headers enumerateKeysAndObjectsUsingBlock: ^(NSString *key, NSString *val, BOOL *stop)
-			{
-				result = [result stringByAppendingString:key];
-				result = [result stringByAppendingString:val];
-			}];
-			return result;
-		@}
-
-		[Foreign(Language.ObjC)]
-		public IEnumerable<string> GetHeader(string key)
-		@{
-			/**/
-			return null;
-		@}
 	}
 }
