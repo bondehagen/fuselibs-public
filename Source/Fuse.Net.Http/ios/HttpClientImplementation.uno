@@ -45,7 +45,7 @@ namespace Fuse.Net.Http
 			return false;
 		}
 
-		void Continue(ObjC.Object response)
+		void Continue(ObjC.Object response, string error, byte[] data)
 		{
 			if (response != null)
 			{
@@ -62,8 +62,10 @@ namespace Fuse.Net.Http
 		void Connect(string strURL, Action<ObjC.Object> completeHandler, Func<byte[], bool> serverCertificateValidationCallback)
 		@{
 			[@{HttpClientImplementation:Of(_this)._client:Get()} connect:strURL
-				onCompleteHandler:^(NSHTTPURLResponse * response) {
-					completeHandler(response);
+				onCompleteHandler:^(NSHTTPURLResponse * response, NSString error, uint8_t * data, NSUInteger length) {
+					id<UnoArray> arr = @{byte[]:New((int)length)};
+					memcpy(arr.unoArray->Ptr(), data, length);
+					completeHandler(response, error, arr);
 				}
 				onCheckServerCertificate:^(uint8_t * data, NSUInteger length) {
 					id<UnoArray> arr = @{byte[]:New((int)length)};
@@ -72,15 +74,7 @@ namespace Fuse.Net.Http
 				}
 			];
 		@}
-		public string GetBodyAsString()
-		{
-			return "";
-		}
 
-		public byte[] GetBodyAsByteArray()
-		{
-			return new byte [0];
-		}
 		public void Dispose()
 		{
 			_client = null;

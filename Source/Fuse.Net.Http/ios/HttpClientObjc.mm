@@ -21,7 +21,7 @@
 	return self;
 }
 
-- (void)connect:(NSString *)url onCompleteHandler:(void (^)(NSHTTPURLResponse *))completeHandler onCheckServerCertificate:(BOOL (^)(uint8_t *, NSUInteger))checkServerCertificate {
+- (void)connect:(NSString *)url onCompleteHandler:(void (^)(NSHTTPURLResponse *, NSString *, uint8_t *, NSUInteger))completeHandler onCheckServerCertificate:(BOOL (^)(uint8_t *, NSUInteger))checkServerCertificate {
 
 	self.onCheckServerCertificate = checkServerCertificate;
 
@@ -38,13 +38,14 @@
 		if (error!=nil)
 		{
 			NSLog(@"error %@" , error);
-			completeHandler(nil);
+			//errorHandler(error);
 		}
 		else
 		{
 			if ([response isKindOfClass:[NSHTTPURLResponse class]]) {
 				NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *) response;
-				completeHandler(httpResponse);
+				completeHandler(httpResponse, @"", (uint8_t *)[data bytes], [data length]);
+
 				/*NSInteger statusCode = [httpResponse statusCode];
 				NSDictionary *dictionary = [httpResponse allHeaderFields];
 				NSString *requestReply = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];*/

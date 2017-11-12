@@ -9,12 +9,14 @@ namespace Fuse.Net.Http
 	extern(iOS) internal class ResponseImplementation
 	{
 		ObjC.Object _response;
+		ObjC.Object _data;
 		IDictionary<string, IEnumerable<string>> _headers;
 
-		internal ResponseImplementation(ObjC.Object response)
+		internal ResponseImplementation(ObjC.Object response, ObjC.Object data)
 		{
 			_headers = new Dictionary<string, IEnumerable<string>>();
 			_response = response;
+			_data = data;
 		}
 		
 		/*public int GetVersion()
@@ -67,5 +69,15 @@ namespace Fuse.Net.Http
 			/**/
 			return null;
 		@}
+
+		public string GetBodyAsString()
+		{
+			return "";
+		}
+
+		public byte[] GetBodyAsByteArray()
+		{
+			return new byte [0];
+		}
 	}
 }
