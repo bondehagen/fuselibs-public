@@ -5,7 +5,7 @@ using Fuse.Security;
 
 namespace Fuse.Net.Http
 {
-	[ForeignInclude(Language.Java, "java.net.HttpURLConnection", "java.io.IOException")]
+	[ForeignInclude(Language.Java, "java.net.HttpURLConnection", "java.io.*")]
 	extern(Android) internal class ResponseImplementation
 	{
 		Java.Object _urlConnection;
@@ -98,15 +98,53 @@ namespace Fuse.Net.Http
 				return _dict;
 			}
 		}
-		public string GetBodyAsString()
-		{
-			return "";
-		}
 
+		[Foreign(Language.Java)]
+		public string GetBodyAsString()
+		@{
+			try {
+				HttpURLConnection connection = (HttpURLConnection)@{ResponseImplementation:Of(_this)._urlConnection:Get()};
+				InputStream input = connection.getInputStream();
+				input.reset();
+				ByteArrayOutputStream result = new ByteArrayOutputStream();
+				byte[] buffer = new byte[1024];
+				int length;
+				while ((length = input.read(buffer)) != -1) {
+					result.write(buffer, 0, length);
+				}
+
+				return result.toString("UTF-8");
+			} catch (UnsupportedEncodingException e) {
+				e.printStackTrace(); 
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			return "";
+		@}
+
+		[Foreign(Language.Java)]
 		public byte[] GetBodyAsByteArray()
-		{
-			return new byte [0];
-		}
+		@{
+			try {
+				HttpURLConnection connection = (HttpURLConnection)@{ResponseImplementation:Of(_this)._urlConnection:Get()};
+				InputStream input = connection.getInputStream();
+				input.reset();
+				ByteArrayOutputStream result = new ByteArrayOutputStream();
+				byte[] buffer = new byte[1024];
+				int length;
+				while ((length = input.read(buffer)) != -1) {
+					result.write(buffer, 0, length);
+				}
+
+				return new ByteArray(result.toByteArray());
+			} catch (UnsupportedEncodingException e) {
+				e.printStackTrace(); 
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			return new ByteArray(0);
+		@}
+
 		[Foreign(Language.Java)]
 		public void Dispose()
 		@{

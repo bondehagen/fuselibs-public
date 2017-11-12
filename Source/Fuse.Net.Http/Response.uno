@@ -15,8 +15,15 @@ namespace Fuse.Net.Http
 		public int StatusCode { get { return _impl.GetStatusCode(); } }
 		public string ReasonPhrase { get { return Uno.Net.Http.HttpStatusReasonPhrase.GetFromStatusCode(StatusCode); } }
 		public string ContentLength { get; set; }
-		public Body Body { get { return new Body(_impl); } }
 
+		public string GetBodyAsString()
+		{
+			return _impl.GetBodyAsString();
+		}
+		public byte[] GetBodyAsByteArray()
+		{
+			return _impl.GetBodyAsByteArray();
+		}
 		public IEnumerable<string> GetHeader(string key)
 		{
 			return _impl.GetHeader(key);
@@ -27,12 +34,7 @@ namespace Fuse.Net.Http
 			return _impl.GetHeaders();
 		}
 	}
-	
-	public class Body
-	{
-		internal Body(ResponseImplementation impl)
-		{}
-	}
+
 	extern(!Android && !ios && !DOTNET) internal class ResponseImplementation
 	{
 		int _statusCode;

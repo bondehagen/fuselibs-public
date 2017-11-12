@@ -39,18 +39,28 @@ namespace Fuse.Net.Http
 
 				dict.Add(key, values);
 			}
+			foreach (var header in _response.Content.Headers.ToString().Split(new [] { '\n' }))
+			{
+				var items = header.Split(new [] { ':' });
+				var key = items[0];
+				var values = new string [0];
+				if (items.Length > 1)
+					values = new string [] { items[1] };
+				if (!dict.ContainsKey(key))
+					dict.Add(key, values);
+			}
 
 			return dict;
 		}
 
 		public string GetBodyAsString()
 		{
-			return "";
+			return _response.Content.ReadAsStringAsync().Result;
 		}
 
 		public byte[] GetBodyAsByteArray()
 		{
-			return new byte [0];
+			return _response.Content.ReadAsByteArrayAsync().Result;
 		}
 	}
 }

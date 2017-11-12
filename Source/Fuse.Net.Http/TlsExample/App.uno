@@ -26,7 +26,7 @@ public partial class App2
 	bool ValidateServerCertificate(X509Certificate certificate, X509Chain certificateChain, SslPolicyErrors sslPolicyErrors)
 	{
 		debug_log "ValidateServerCertificate";
-		debug_log certificate.ToString();
+		//debug_log certificate.ToString();
 		if (sslPolicyErrors == SslPolicyErrors.None)
 		{
 			// do some validation
@@ -61,6 +61,18 @@ public partial class App2
 				//response.Body.AsString().Then(PrintString, Error);
 				//response.Body.AsStream().Then(ConvertStream, Error);
 				debug_log "header done";
+				var body = response.GetBodyAsString();
+				var bbody = response.GetBodyAsByteArray();
+				debug_log body.Substring(0, 200);
+				if (body == Uno.Text.Utf8.GetString(bbody))
+				{
+					debug_log "True";
+				}
+				else
+				{
+					debug_log "False";
+					debug_log Uno.Text.Utf8.GetString(bbody);
+				}
 			}
 			else
 			{

@@ -129,14 +129,23 @@ namespace System.Net.Http
 	extern(DOTNET && !HOST_MAC) internal class HttpResponseMessage
 	{
 		public extern HttpStatusCode StatusCode { get; }
-		public extern HttpResponseHeaders Headers { get; }
+		public extern HttpHeaders Headers { get; }
+		public extern HttpContent Content { get; }
 	}
-	
-	[DotNetType("System.Net.Http.Headers.HttpResponseHeaders")]
-	extern(DOTNET && !HOST_MAC) internal class HttpResponseHeaders
+	[DotNetType("System.Net.Http.Headers.HttpHeaders")]
+	extern(DOTNET && !HOST_MAC) internal class HttpHeaders
 	{
 		public extern bool TryGetValues(string name, out IEnumerable<string> values);
 		public extern override string ToString();
+	}
+	[DotNetType("System.Net.Http.HttpContent")]
+	extern(DOTNET && !HOST_MAC) internal class HttpContent 
+	{
+		public extern HttpHeaders Headers { get; }
+		public extern override string ToString();
+		public extern System.Threading.Tasks.Task<byte[]> ReadAsByteArrayAsync();
+		//public Task<Stream> ReadAsStreamAsync();
+		public extern System.Threading.Tasks.Task<string> ReadAsStringAsync();
 	}
 
 	[DotNetType("System.Net.Http.WebRequestHandler")]
