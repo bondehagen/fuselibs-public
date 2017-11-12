@@ -1,0 +1,10 @@
+{
+  "Packages": [
+  	"Fuse",
+    "Fuse.Net.Http"
+  ],
+  "Includes": [
+    "*",
+    //"msdnmicrosoftcom.der:Bundle",
+  ]
+}
