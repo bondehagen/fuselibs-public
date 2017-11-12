@@ -105,7 +105,6 @@ namespace Fuse.Net.Http
 			try {
 				HttpURLConnection connection = (HttpURLConnection)@{ResponseImplementation:Of(_this)._urlConnection:Get()};
 				InputStream input = connection.getInputStream();
-				input.reset();
 				ByteArrayOutputStream result = new ByteArrayOutputStream();
 				byte[] buffer = new byte[1024];
 				int length;
@@ -128,7 +127,6 @@ namespace Fuse.Net.Http
 			try {
 				HttpURLConnection connection = (HttpURLConnection)@{ResponseImplementation:Of(_this)._urlConnection:Get()};
 				InputStream input = connection.getInputStream();
-				input.reset();
 				ByteArrayOutputStream result = new ByteArrayOutputStream();
 				byte[] buffer = new byte[1024];
 				int length;

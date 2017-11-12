@@ -65,11 +65,11 @@ public class HttpTest {
 
 					if (url.getProtocol().equalsIgnoreCase("https")) {
 						HttpsURLConnection sslConnection = (HttpsURLConnection)connection;
-						sslConnection.setHostnameVerifier(new HostnameVerifier(){
+						/*sslConnection.setHostnameVerifier(new HostnameVerifier(){
 							public boolean verify(String hostname, SSLSession session) {
 								System.out.println(hostname);
 								return true;
-							}});
+							}});*/
 						SSLContext context = null;
 						try {
 							context = SSLContext.getInstance("TLS");
@@ -109,19 +109,12 @@ public class HttpTest {
 						callback.onHeadersReceived(connection);
 					}
 					
-					
 					//publishProgress(DownloadCallback.Progress.CONNECT_SUCCESS);
 
 					// Retrieve the response body as an InputStream.
 					stream = connection.getInputStream();
 
 					//publishProgress(DownloadCallback.Progress.GET_INPUT_STREAM_SUCCESS, 0);
-
-					if (stream != null) {
-						result = readStream(stream);
-						//callback.onDone(result);
-						//copyInputStreamToFile(stream, System.out);
-					}
 				} finally {
 					if (stream != null) {
 						stream.close();
@@ -149,38 +142,5 @@ public class HttpTest {
 		protected void onPostExecute(Long result) {
 			//showNotification("Downloaded " + result + " bytes");
 		}
-	}
-
-	private void copyInputStreamToFile(InputStream in, PrintStream out) {
-		try {
-			byte[] buf = new byte[1024];
-			int len;
-			while((len=in.read(buf))>0){
-				out.write(buf,0,len);
-			}
-			out.close();
-			in.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	private String readStream(InputStream input) {
-		try {
-			ByteArrayOutputStream result = new ByteArrayOutputStream();
-			byte[] buffer = new byte[1024];
-			int length;
-			while ((length = input.read(buffer)) != -1) {
-				result.write(buffer, 0, length);
-			}
-			// StandardCharsets.UTF_8.name() > JDK 7
-
-			return result.toString("UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return null;
 	}
 }
