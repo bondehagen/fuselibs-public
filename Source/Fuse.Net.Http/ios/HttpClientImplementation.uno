@@ -45,11 +45,11 @@ namespace Fuse.Net.Http
 			return false;
 		}
 
-		void Continue(ObjC.Object response, string error, byte[] data)
+		void Continue(ObjC.Object response, byte[] data)
 		{
 			if (response != null)
 			{
-				_promise.Resolve(new Response(new ResponseImplementation(response)));
+				_promise.Resolve(new Response(new ResponseImplementation(response, data)));
 			}
 			else
 			{
@@ -59,15 +59,15 @@ namespace Fuse.Net.Http
 		}
 
 		[Foreign(Language.ObjC)]
-		void Connect(string strURL, Action<ObjC.Object> completeHandler, Func<byte[], bool> serverCertificateValidationCallback)
+		void Connect(string strURL, Action<ObjC.Object, byte[]> completeHandler, Func<byte[], bool> serverCertificateValidationCallback)
 		@{
 			[@{HttpClientImplementation:Of(_this)._client:Get()} connect:strURL
-				onCompleteHandler:^(NSHTTPURLResponse * response, NSString error, uint8_t * data, NSUInteger length) {
+				onCompleteHandler:^(NSHTTPURLResponse * response, uint8_t * data, NSUInteger length) {
 					id<UnoArray> arr = @{byte[]:New((int)length)};
 					memcpy(arr.unoArray->Ptr(), data, length);
-					completeHandler(response, error, arr);
+					completeHandler(response, arr);
 				}
-				onCheckServerCertificate:^(uint8_t * data, NSUInteger length) {
+				onCheckServerCertificate: ^ BOOL(uint8_t * data, NSUInteger length) {
 					id<UnoArray> arr = @{byte[]:New((int)length)};
 					memcpy(arr.unoArray->Ptr(), data, length);
 					return serverCertificateValidationCallback(arr);

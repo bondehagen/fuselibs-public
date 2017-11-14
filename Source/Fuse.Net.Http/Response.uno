@@ -11,6 +11,11 @@ namespace Fuse.Net.Http
 		{
 			_impl = impl;
 		}
+		
+		~Response()
+		{
+			debug_log "dealloc Response";
+		}
 
 		public int StatusCode { get { return _impl.GetStatusCode(); } }
 		public string ReasonPhrase { get { return Uno.Net.Http.HttpStatusReasonPhrase.GetFromStatusCode(StatusCode); } }
@@ -26,7 +31,11 @@ namespace Fuse.Net.Http
 		}
 		public IEnumerable<string> GetHeader(string key)
 		{
-			return _impl.GetHeader(key);
+			IEnumerable<string> ret;
+			if (GetHeaders().TryGetValue(key, out ret))
+				return ret;
+
+			return null;
 		}
 
 		public IDictionary<string, IEnumerable<string>> GetHeaders()

@@ -15,6 +15,12 @@ namespace Foundation
 	[DotNetType("Foundation.NSObject")]
 	extern(DOTNET && HOST_MAC) public class NSObject
 	{
+		public extern override string ToString();
+	}
+	
+	[DotNetType("Foundation.NSString")]
+	extern(DOTNET && HOST_MAC) public class NSString
+	{
 	}
 	
 	[DotNetType("Foundation.NSDictionary")]
@@ -101,6 +107,10 @@ namespace Foundation
 		public extern static NSUrlSessionConfiguration DefaultSessionConfiguration { get; }
 	}
 
+	[DotNetType("Foundation.NSUrlSessionTask")]
+	extern(DOTNET && HOST_MAC) internal class NSUrlSessionTask
+	{}
+
 	[DotNetType("Foundation.NSUrlSessionDelegate")]
 	extern(DOTNET && HOST_MAC) internal class NSUrlSessionDelegate
 	{
@@ -108,7 +118,19 @@ namespace Foundation
 
 		public extern virtual void DidFinishEventsForBackgroundSession(NSUrlSession session);
 
-		public extern virtual void DidReceiveChallenge(NSUrlSession session, NSUrlAuthenticationChallenge challenge, Action<NSUrlSessionAuthChallengeDisposition, NSUrlCredential> completionHandler);
+		public extern virtual void DidReceiveChallenge(NSUrlSession session, NSUrlAuthenticationChallenge challenge,
+			Action<NSUrlSessionAuthChallengeDisposition, NSUrlCredential> completionHandler);
+	}
+
+	[DotNetType("Foundation.NSUrlSessionTaskDelegate")]
+	extern(DOTNET && HOST_MAC) internal class NSUrlSessionTaskDelegate : NSUrlSessionDelegate
+	{
+		public extern virtual void WillPerformHttpRedirection(NSUrlSession session, NSUrlSessionTask task,
+			NSHttpUrlResponse response, NSUrlRequest newRequest, Action<NSUrlRequest> completionHandler);
+	}
+	[DotNetType("Foundation.NSUrlSessionDataDelegate")]
+	extern(DOTNET && HOST_MAC) internal class NSUrlSessionDataDelegate : NSUrlSessionTaskDelegate
+	{
 	}
 
 	[DotNetType("Foundation.NSUrlAuthenticationChallenge")]

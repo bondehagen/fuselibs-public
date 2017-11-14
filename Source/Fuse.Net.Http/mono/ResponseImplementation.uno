@@ -28,12 +28,12 @@ namespace Fuse.Net.Http
 		
 		public IDictionary<string, IEnumerable<string>> GetHeaders()
 		{
-			var en = httpUrlResponse.AllHeaderFields;
+			var en = _response.AllHeaderFields;
 			var dict = new Dictionary<string, IEnumerable<string>>(); 
 			foreach (var key in en.Keys)
 			{
-				var v = en[key];
-				dict.Add(key, v.Split(","));
+				var v = en[key].ToString();
+				dict.Add(key.ToString(), new [] { v });
 			}
 			return dict;
 		}

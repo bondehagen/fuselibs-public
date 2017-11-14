@@ -6,7 +6,7 @@ namespace Fuse.Net.Http
 	using Foundation;
 	using Security;
 
-	extern(DOTNET && HOST_MAC) class HttpClientImplementation : NSUrlSessionDelegate
+	extern(DOTNET && HOST_MAC) class HttpClientImplementation : NSUrlSessionDataDelegate
 	{
 		Promise<Response> _response;
 		HttpClient _client;
@@ -15,11 +15,11 @@ namespace Fuse.Net.Http
 		{
 			_client = client;
 			//NSApplication.Init();
-			_response = new Promise<Response>();
 		}
 		
 		public Future<Response> SendAsync(Request request)
 		{
+			_response = new Promise<Response>();
 			var url = NSUrl.FromString(request.Url);
 			var nsUrlRequest = NSUrlRequest.FromUrl(url);
 
@@ -49,10 +49,12 @@ namespace Fuse.Net.Http
 				}
 				_response.Reject(new Exception("Something wrong happened"));
 			}
-			catch (Exception e)
+			catch (Exception e)	
 			{
 				_response.Reject(e);
 			}
+
+			// FinishTasksAndInvalidate() ?
 		}
 		
 		public override void DidBecomeInvalid(NSUrlSession session, NSError error)
@@ -63,6 +65,12 @@ namespace Fuse.Net.Http
 		public override void DidFinishEventsForBackgroundSession(NSUrlSession session)
 		{
 			debug_log "DidFinishEventsForBackgroundSession";
+		}
+		
+		public override void WillPerformHttpRedirection(NSUrlSession session, NSUrlSessionTask task, NSHttpUrlResponse response, NSUrlRequest newRequest, Action<NSUrlRequest> completionHandler)
+		{
+			debug_log "WillPerformHttpRedirection";
+			completionHandler(newRequest);
 		}
 
 		public override void DidReceiveChallenge(NSUrlSession session, NSUrlAuthenticationChallenge challenge, Action<NSUrlSessionAuthChallengeDisposition, NSUrlCredential> completionHandler)

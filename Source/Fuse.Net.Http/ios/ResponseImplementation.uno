@@ -9,20 +9,14 @@ namespace Fuse.Net.Http
 	extern(iOS) internal class ResponseImplementation
 	{
 		ObjC.Object _response;
-		ObjC.Object _data;
+		byte[] _data;
 		IDictionary<string, IEnumerable<string>> _headers;
 
-		internal ResponseImplementation(ObjC.Object response, ObjC.Object data)
+		internal ResponseImplementation(ObjC.Object response, byte[] data)
 		{
-			_headers = new Dictionary<string, IEnumerable<string>>();
 			_response = response;
 			_data = data;
 		}
-		
-		/*public int GetVersion()
-		{
-			return ((HttpURLConnection)_urlConnection).();
-		}*/
 		
 		[Foreign(Language.ObjC)]
 		public int GetStatusCode()
@@ -35,32 +29,25 @@ namespace Fuse.Net.Http
 
 		public IDictionary<string, IEnumerable<string>> GetHeaders()
 		{
-			var dict = new Dictionary<string, IEnumerable<string>>();
-			foreach (var header in GetHeaderFields().Split(new [] { '\n' }))
-			{
-				var items = header.Split(new [] { ':' });
-				var key = items[0];
-				var values = new string [0];
-				if (items.Length > 1)
-					values = new string [] { items[1] };
-
-				dict.Add(key, values);
-			}
+			_headers = new Dictionary<string, IEnumerable<string>>();
+			GetHeaderFields(Add);
 			return _headers;
 		}
 
+		void Add(string key, string val)
+		{
+			_headers.Add(key, new [] { val });
+		}
+
 		[Foreign(Language.ObjC)]
-		string GetHeaderFields()
+		void GetHeaderFields(Action<string, string> add)
 		@{
 			NSHTTPURLResponse *httpResponse = (NSHTTPURLResponse *)@{ResponseImplementation:Of(_this)._response:Get()};
 			NSDictionary *headers = [httpResponse allHeaderFields];
-			__block NSString * result = @"";
 			[headers enumerateKeysAndObjectsUsingBlock: ^(NSString *key, NSString *val, BOOL *stop)
 			{
-				result = [result stringByAppendingString:key];
-				result = [result stringByAppendingString:val];
+				add(key, val);
 			}];
-			return result;
 		@}
 
 		[Foreign(Language.ObjC)]
@@ -72,12 +59,12 @@ namespace Fuse.Net.Http
 
 		public string GetBodyAsString()
 		{
-			return "";
+			return Uno.Text.Utf8.GetString(_data);
 		}
 
 		public byte[] GetBodyAsByteArray()
 		{
-			return new byte [0];
+			return _data;
 		}
 	}
 }

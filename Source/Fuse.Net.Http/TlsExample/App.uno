@@ -37,11 +37,19 @@ public partial class App2
 
 	void SendRequest(object a1, EventArgs a2)
 	{
-		if (!this.isBusy.IsActive)
+		try
 		{
-			this.isBusy.IsActive = true;
-			var request = new Request("https://fusetools.com");
-			_client.Send(request).Then(HandleResponse, Error);
+			if (!this.isBusy.IsActive)
+			{
+				this.isBusy.IsActive = true;
+				var request = new Request("https://fusetools.com");
+				_client.Send(request).Then(HandleResponse, Error);
+			}
+		}
+		catch(Exception e)
+		{
+			debug_log e.Message;
+			debug_log e.StackTrace;
 		}
 	}
 
@@ -62,17 +70,8 @@ public partial class App2
 				//response.Body.AsStream().Then(ConvertStream, Error);
 				debug_log "header done";
 				var body = response.GetBodyAsString();
-				var bbody = response.GetBodyAsByteArray();
+				//var bbody = response.GetBodyAsByteArray();
 				debug_log body.Substring(0, 200);
-				if (body == Uno.Text.Utf8.GetString(bbody))
-				{
-					debug_log "True";
-				}
-				else
-				{
-					debug_log "False";
-					debug_log Uno.Text.Utf8.GetString(bbody);
-				}
 			}
 			else
 			{
@@ -84,6 +83,7 @@ public partial class App2
 			debug_log e.Message;
 			debug_log e.StackTrace;
 		}
+		response = null;
 		this.isBusy.IsActive = false;
 	}
 	
