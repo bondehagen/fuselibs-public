@@ -16,15 +16,41 @@ namespace Fuse.Net.Http
 			_client = client;
 			//NSApplication.Init();
 		}
-		
+
 		public Future<Response> SendAsync(Request request)
 		{
 			_response = new Promise<Response>();
 			var url = NSUrl.FromString(request.Url);
-			var nsUrlRequest = NSUrlRequest.FromUrl(url);
+			var nsUrlRequest = new NSMutableUrlRequest(url);
+			nsUrlRequest.HttpMethod = request.Method;
 
+			var proxyhost = "192.168.1.20";
+			var proxyport = 8080;
+			var enableProxy = 1;
 			using (var configuration = NSUrlSessionConfiguration.DefaultSessionConfiguration)
 			{
+				var values = new NSObject[]
+				{
+					NSObject.FromObject(proxyhost),
+					NSNumber.FromInt32(proxyport),
+					NSNumber.FromInt32(enableProxy),
+
+					NSObject.FromObject(proxyhost),
+					NSNumber.FromInt32(proxyport),
+					NSNumber.FromInt32(enableProxy),
+				};
+				var keys = new NSObject[]
+				{
+					NSObject.FromObject("HTTPProxy"),
+					NSObject.FromObject("HTTPPort"),
+					NSObject.FromObject("HTTPEnable"),
+					NSObject.FromObject("HTTPSProxy"),
+					NSObject.FromObject("HTTPSPort"),
+					NSObject.FromObject("HTTPSEnable")
+				};
+				var proxyDict = NSDictionary.FromObjectsAndKeys(values, keys);
+				configuration.ConnectionProxyDictionary = proxyDict;
+
 				var _session = NSUrlSession.FromConfiguration(configuration, this, null);
 				//var _session = NSUrlSession.SharedSession;
 				var task = _session.CreateDataTask(nsUrlRequest, Callback);
@@ -77,13 +103,43 @@ namespace Fuse.Net.Http
 		{
 			if (_client.ServerCertificateValidationCallback != null)
 			{
-				var secCertificateRef = challenge.ProtectionSpace.ServerSecTrust;
 				var protectionSpace = challenge.ProtectionSpace;
-				//debug_log protectionSpace.Host;
+				debug_log protectionSpace.Host;
 
-				var secTrust = protectionSpace.ServerSecTrust;
-				var certificate = secTrust[0];
- 				var x509 = certificate.ToX509Certificate2();
+				// Get remote certificate
+				var serverTrust = protectionSpace.ServerSecTrust; // contains the server's SSL certificate data
+				var certificate = serverTrust[0];
+
+				// Set SSL policies for domain name check
+				/*NSMutableArray *policies = [NSMutableArray array];
+				[policies addObject:(__bridge_transfer id)SecPolicyCreateSSL(true, (__bridge CFStringRef)challenge.protectionSpace.host)];
+				SecTrustSetPolicies(serverTrust, (__bridge CFArrayRef)policies);*/
+				serverTrust.SetPolicy(global::Security.SecPolicy.CreateSslPolicy(true, protectionSpace.Host));
+
+				// Evaluate server certificate
+				/*SecTrustResultType result;
+				SecTrustEvaluate(serverTrust, &result);
+				BOOL certificateIsValid = (result == kSecTrustResultUnspecified || result == kSecTrustResultProceed);*/
+				var result = serverTrust.Evaluate();
+				var certificateIsValid = (result == global::Security.SecTrustResult.Unspecified || result == global::Security.SecTrustResult.Proceed);
+
+				// Get local and remote cert data
+				NSData remoteCertificateData = certificate.DerData;
+				NSData localCertificate = null;//LoadCertFromBundle;
+
+				// The pinnning check
+				if (remoteCertificateData == localCertificate && certificateIsValid)
+				{
+					var credential = NSUrlCredential.FromTrust(protectionSpace.ServerSecTrust);
+					completionHandler(NSUrlSessionAuthChallengeDisposition.UseCredential, credential);
+				}
+				else
+				{
+					completionHandler(NSUrlSessionAuthChallengeDisposition.CancelAuthenticationChallenge, null);
+				}
+				return;
+
+				/*var x509 = certificate.ToX509Certificate2();
 				var c = new Fuse.Security.X509Certificate(x509.RawData);
 				var result = _client.ServerCertificateValidationCallback(c, new Fuse.Security.X509Chain(), (SslPolicyErrors)(int)0);
 				if (result)
@@ -92,12 +148,12 @@ namespace Fuse.Net.Http
 					{
 						//if(challenge.ProtectionSpace.Host == "uno-http-testing.azurewebsites.net")
 						//{
-							var credential = NSUrlCredential.FromTrust(challenge.ProtectionSpace.ServerSecTrust);
+							var credential = NSUrlCredential.FromTrust(protectionSpace.ServerSecTrust);
 							completionHandler(NSUrlSessionAuthChallengeDisposition.UseCredential, credential);
 							return;
 						//}
 					}
-				}
+				}*/
 			}
 			completionHandler(NSUrlSessionAuthChallengeDisposition.CancelAuthenticationChallenge, null);
 		}

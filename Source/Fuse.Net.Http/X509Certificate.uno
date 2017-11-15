@@ -7,8 +7,6 @@ namespace Fuse.Security
 {
 	public class X509Certificate
 	{
-		public string Subject { get; private set; }
-		public string Issuer { get; private set; }
 		public byte[] DerEncodedData { get; private set; } 
 
 		public X509Certificate(byte[] der)

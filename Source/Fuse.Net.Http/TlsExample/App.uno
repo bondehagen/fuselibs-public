@@ -27,6 +27,14 @@ public partial class App2
 	{
 		debug_log "ValidateServerCertificate";
 		//debug_log certificate.ToString();
+		debug_log "Subject: " + certificate.Certificate.Subject.Name;
+		debug_log "Issuer: " + certificate.Certificate.Issuer.Name;
+		// TODO: trusting the self-signed server certificate through ssl pinning, with a cert loaded from bundle
+		// ios https://infinum.co/the-capsized-eight/how-to-make-your-ios-apps-more-secure-with-ssl-pinning
+		// android https://infinum.co/the-capsized-eight/securing-mobile-banking-on-android-with-ssl-certificate-pinning https://medium.com/@appmattus/android-security-ssl-pinning-1db8acb6621e
+		// do pinning against the public key (SubjectPublicKeyInfo)
+		// or we can just check if there is a CA installed that accepts the server.
+		// maybe both
 		if (sslPolicyErrors == SslPolicyErrors.None)
 		{
 			// do some validation
@@ -42,7 +50,7 @@ public partial class App2
 			if (!this.isBusy.IsActive)
 			{
 				this.isBusy.IsActive = true;
-				var request = new Request("https://fusetools.com");
+				var request = new Request("GET", "https://fusetools.com");
 				_client.Send(request).Then(HandleResponse, Error);
 			}
 		}
@@ -59,19 +67,22 @@ public partial class App2
 		{
 			if (response != null)
 			{
-				debug_log response.StatusCode;
+				debug_log "----- StatusCode -----";
+				debug_log response.StatusCode + " " + response.ReasonPhrase;
+				debug_log "----- Headers --------";
 				foreach (var item in response.GetHeaders())
 				{
-					debug_log item.Key;
+					var header = item.Key + ":";
 					foreach (var v in item.Value)
-						debug_log "  " + v;
+						header += "  " + v;
+
+					debug_log header;
 				}
-				//response.Body.AsString().Then(PrintString, Error);
-				//response.Body.AsStream().Then(ConvertStream, Error);
-				debug_log "header done";
+				debug_log "----- Body -----------";
 				var body = response.GetBodyAsString();
 				//var bbody = response.GetBodyAsByteArray();
 				debug_log body.Substring(0, 200);
+				debug_log "----------------------";
 			}
 			else
 			{

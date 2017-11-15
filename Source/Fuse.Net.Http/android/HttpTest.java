@@ -63,7 +63,7 @@ public class HttpTest {
 					connection.setDoInput(true);
 
 
-					if (url.getProtocol().equalsIgnoreCase("https")) {
+					if (url.getProtocol().equalsIgnoreCase("https")) { // TODO if(urlConnection instanceof HttpsURLConnection) {
 						HttpsURLConnection sslConnection = (HttpsURLConnection)connection;
 						/*sslConnection.setHostnameVerifier(new HostnameVerifier(){
 							public boolean verify(String hostname, SSLSession session) {
@@ -80,6 +80,8 @@ public class HttpTest {
 								}
 								public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
 									System.out.println(authType);
+									chain = net.http.X509TrustManagerExtensions.checkServerTrusted(); // https://www.synopsys.com/blogs/software-security/ineffective-certificate-pinning-implementations/
+
 									X509Certificate cert = chain[0];
 									/*try {
 										cert.checkValidity();
