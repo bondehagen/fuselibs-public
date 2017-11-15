@@ -27,8 +27,7 @@ namespace Fuse.Net.Http
 		[Foreign(Language.Java)]
 		void connect(string uri, Action<Java.Object> cont, Action<string> fail, Func<byte[], bool> serverCertificateValidationCallback)
 		@{
-			HttpTest client = new HttpTest();
-			client.callback = new MyCallback() {
+			HttpClientAndroid client = new HttpClientAndroid() {
 				public void onHeadersReceived(HttpURLConnection urlConnection) {
 					cont.run(urlConnection);
 				}
@@ -39,7 +38,7 @@ namespace Fuse.Net.Http
 					return serverCertificateValidationCallback.run(new com.uno.ByteArray(asn1derEncodedCert));
 				}
 			};
-			client.createRequest(uri);
+			client.createRequest(uri, "", "", 0);
 		@}
 
 		void Continue(Java.Object urlConnection)
