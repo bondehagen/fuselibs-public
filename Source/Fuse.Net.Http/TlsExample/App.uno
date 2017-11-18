@@ -20,6 +20,16 @@ public partial class App2
 	X509Certificate LoadCertificateFromBundle(string bundleFilename)
 	{
 		var bundleFile = Bundle.Get().GetFile(bundleFilename);
+		if (bundleFilename.ToLower().EndsWith(".pem") || bundleFilename.ToLower().EndsWith(".crt"))
+		{
+			var data = bundleFile.ReadAllText();
+			var begin = "-----BEGIN CERTIFICATE-----";
+			var end = "-----END CERTIFICATE-----";
+			data = data.Replace(begin, "");
+			data = data.Replace(end, "");
+			var bytes = Uno.Text.Base64.GetBytes(data);
+			return new X509Certificate(bytes);
+		}
 		return LoadCertificateFromBytes.Load(bundleFile.ReadAllBytes());
 	}
 
