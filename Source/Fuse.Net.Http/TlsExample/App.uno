@@ -17,29 +17,32 @@ public partial class App2
 		InitializeUX();
 	}
 
-	X509Certificate LoadClientCertificateFromBundle()
+	X509Certificate LoadCertificateFromBundle(string bundleFilename)
 	{
-		var bundleFile = Bundle.Get().GetFile("msdnmicrosoftcom.der");
+		var bundleFile = Bundle.Get().GetFile(bundleFilename);
 		return LoadCertificateFromBytes.Load(bundleFile.ReadAllBytes());
 	}
 
-	bool ValidateServerCertificate(X509Certificate certificate, X509Chain certificateChain, SslPolicyErrors sslPolicyErrors)
+	bool ValidateServerCertificate(X509Certificate serverCert, X509Chain certificateChain, SslPolicyErrors sslPolicyErrors)
 	{
 		debug_log "ValidateServerCertificate";
-		//debug_log certificate.ToString();
-		debug_log "Subject: " + certificate.Certificate.Subject.Name;
-		debug_log "Issuer: " + certificate.Certificate.Issuer.Name;
+		debug_log "Subject: " + serverCert.Certificate.Subject.Name;
+		debug_log "Issuer: " + serverCert.Certificate.Issuer.Name;
 		// TODO: trusting the self-signed server certificate through ssl pinning, with a cert loaded from bundle
 		// ios https://infinum.co/the-capsized-eight/how-to-make-your-ios-apps-more-secure-with-ssl-pinning
 		// android https://infinum.co/the-capsized-eight/securing-mobile-banking-on-android-with-ssl-certificate-pinning https://medium.com/@appmattus/android-security-ssl-pinning-1db8acb6621e
 		// do pinning against the public key (SubjectPublicKeyInfo)
 		// or we can just check if there is a CA installed that accepts the server.
 		// maybe both
+		var localCert = LoadCertificateFromBundle("mitmproxy.pem");
+		if (localCert.Certificate.SubjectPublicKeyInfo.ToString() == serverCert.Certificate.SubjectPublicKeyInfo.ToString())
+			return true;
+
 		if (sslPolicyErrors == SslPolicyErrors.None)
 		{
-			// do some validation
 			return true;
 		}
+		debug_log "SSL/TLS validation errors occured " + sslPolicyErrors;
 		return false;
 	}
 

@@ -23,18 +23,31 @@ namespace Fuse.Net.Http
 		{
 			_client = client;
 		}
+		class Proxy : System.Net.IWebProxy
+		{
+			System.Uri _proxyAddress;
+			
+			public System.Net.ICredentials Credentials { get; set; }
 
+			public Proxy(string proxyAddress, int port)
+			{
+				_proxyAddress = new UriBuilder("http", proxyAddress, port).Uri;
+			}
+
+			public System.Uri GetProxy(System.Uri destination)
+			{
+				return _proxyAddress;
+			}
+			public bool IsBypassed(System.Uri host)
+			{
+				return false;
+			}
+		}
 		public Uno.Threading.Future<Response> SendAsync(Request request)
 		{
 			_promise = new Uno.Threading.Promise<Response>();
 
-		/*	var handler = new HttpClientHandler();
-			handler.ClientCertificateOptions = ClientCertificateOption.Manual;
-			handler.SslProtocols = SslProtocols.Tls12;
-			handler.ClientCertificates.Add(new X509Certificate2("cert.crt"));
-			var client = new HttpClient(handler);
-
-			using (var handler = new WebRequestHandler())
+			/*using (var handler = new WebRequestHandler())
 			{
 			    handler.ServerCertificateValidationCallback = ...
 
@@ -44,21 +57,24 @@ namespace Fuse.Net.Http
 			    }
 			}
 
-
-			WebRequestHandler handler = new WebRequestHandler();
-			X509Certificate2 certificate = GetMyX509Certificate();
-			handler.ClientCertificates.Add(certificate);
-
-			var client = new HttpClient(handler);
-
 			//specify to use TLS 1.2 as default connection
 			System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
 
 			httpClient.BaseAddress = new Uri("https://foobar.com/");
 			httpClient.DefaultRequestHeaders.Accept.Clear();
 			httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));*/
-
-			var client = new System.Net.Http.HttpClient();
+			var handler = new HttpClientHandler()
+            {
+                Proxy = new Proxy("192.168.1.233", 8080),
+                UseProxy = true,
+            };
+            handler.AllowAutoRedirect = true;
+            /*	
+			handler.ClientCertificateOptions = ClientCertificateOption.Manual;
+			handler.SslProtocols = SslProtocols.Tls12;
+			handler.ClientCertificates.Add(new X509Certificate2("cert.crt"));
+			*/
+			var client = new System.Net.Http.HttpClient(handler);
 
 			var source = new CancellationTokenSource();
 			var token = source.Token;
@@ -80,6 +96,7 @@ namespace Fuse.Net.Http
 			}
 			else
 			{
+				debug_log task.Exception.GetType();
 				_promise.Reject(new Uno.Exception(task.Exception.ToString()));
 			}
 		}

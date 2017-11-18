@@ -13,15 +13,25 @@ namespace Fuse.Net.Http
 	[Set("DefaultValue", "NULL")]
 	[Set("FileExtension", "mm")]
 	[TargetSpecificType]
-	extern(iOS) struct SecCertHandle
+	extern(iOS) struct SecCertificateRef
 	{
-		public static bool IsNull(SecCertHandle lhs)
+		public static bool IsNull(SecCertificateRef lhs)
 		{
 			return extern<bool>(lhs)"$0 == NULL";
 		}
+		
+		[Foreign(Language.ObjC)]
+		public static byte[] GetRawData(SecCertificateRef lhs)
+		@{
+			CFDataRef dataref = SecCertificateCopyData(lhs);
+			NSData* data = CFBridgingRelease(dataref);
+			id<UnoArray> arr = @{byte[]:New((int)[data length])};
+			memcpy(arr.unoArray->Ptr(), (uint8_t *)[data bytes], [data length]);
+			return arr;
+		@}
 	}
 
-	[Require("Entity","SecCertHandle")]
+	[Require("Entity","SecCertificateRef")]
 	extern(iOS)
 	public static class LoadCertificateFromBytes
 	{
@@ -33,10 +43,9 @@ namespace Fuse.Net.Http
 		static X509Certificate Load(ForeignDataView view)
 		{
 			var certRef = Impl(view);
-			if (!SecCertHandle.IsNull(certRef))
+			if (!SecCertificateRef.IsNull(certRef))
 			{
-				// TODO: Extract details here
-				return null;
+				return new X509Certificate(SecCertificateRef.GetRawData(certRef));
 			}
 			else
 			{
@@ -46,7 +55,7 @@ namespace Fuse.Net.Http
 		}
 
 		[Foreign(Language.ObjC)]
-		static SecCertHandle Impl(ForeignDataView view)
+		static SecCertificateRef Impl(ForeignDataView view)
 		@{
 			return SecCertificateCreateWithData(NULL, (__bridge CFDataRef)view);
 		@}

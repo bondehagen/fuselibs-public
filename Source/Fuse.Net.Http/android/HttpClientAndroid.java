@@ -19,6 +19,7 @@ import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -37,7 +38,7 @@ public abstract class HttpClientAndroid extends AsyncTask<URL, Integer, Long> {
 
 	public abstract void onFailure(String response);
 
-	public abstract boolean onCheckServerTrusted(byte[] asn1derEncodedCert);
+	public abstract boolean onCheckServerTrusted(List<byte[]> asn1derEncodedCert, boolean chainError);
 
 	public void createRequest(String uri, String method, String proxyHost, int proxyPort) {
 
@@ -128,7 +129,7 @@ public abstract class HttpClientAndroid extends AsyncTask<URL, Integer, Long> {
 
 				//publishProgress(DownloadCallback.Progress.GET_INPUT_STREAM_SUCCESS, 0);
 			} catch (Exception e) {
-				e.printStackTrace();
+				onFailure(e.getMessage());
 			} finally {
 				if (connection != null) {
 					connection.disconnect();
@@ -166,25 +167,34 @@ public abstract class HttpClientAndroid extends AsyncTask<URL, Integer, Long> {
 		}
 
 		public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+			boolean chainError = false;
 			X509Certificate cert = chain[0];
 			try {
 				cert.checkValidity();
 			} catch (CertificateExpiredException cee) {
+				chainError = true;
 				cee.printStackTrace();
 			} catch (CertificateNotYetValidException cnyv) {
+				chainError = true;
 				cnyv.printStackTrace();
 			}
-			// https://www.synopsys.com/blogs/software-security/ineffective-certificate-pinning-implementations/
-			List<X509Certificate> trustedChain = this.tmx.checkServerTrusted(chain, authType, this.serverHostname);
+			List<X509Certificate> trustedChain = new ArrayList<>();
+			Collections.addAll(trustedChain, chain);
+			try {
+				// https://www.synopsys.com/blogs/software-security/ineffective-certificate-pinning-implementations/
+				trustedChain = this.tmx.checkServerTrusted(chain, authType, this.serverHostname);
 
+			} catch (CertificateException ce) {
+				chainError = true;
+			}
 			List<byte[]> encodedChain = new ArrayList<byte[]>();
 			for (X509Certificate trustedCert : trustedChain) {
 				encodedChain.add(trustedCert.getEncoded());
 			}
 
-			boolean trusted = onCheckServerTrusted(cert.getEncoded());
+			boolean trusted = onCheckServerTrusted(encodedChain, chainError);
 			if (!trusted)
-				throw new CertificateException("User did not trust certificate");
+				throw new CertificateException("Validation procedure trust certificate");
 		}
 
 		public X509Certificate[] getAcceptedIssuers() {

@@ -25,17 +25,20 @@ namespace Fuse.Net.Http
 		}
 
 		[Foreign(Language.Java)]
-		void connect(string uri, Action<Java.Object> cont, Action<string> fail, Func<byte[], bool> serverCertificateValidationCallback)
+		void connect(string uri, Action<Java.Object> cont, Action<string> fail, Func<byte[], bool, bool> serverCertificateValidationCallback)
 		@{
 			HttpClientAndroid client = new HttpClientAndroid() {
+				@Override
 				public void onHeadersReceived(HttpURLConnection urlConnection) {
 					cont.run(urlConnection);
 				}
+				@Override
 				public void onFailure(String message) {
 					fail.run(message);
 				}
-				public boolean onCheckServerTrusted(byte[] asn1derEncodedCert) {
-					return serverCertificateValidationCallback.run(new com.uno.ByteArray(asn1derEncodedCert));
+				@Override
+				public boolean onCheckServerTrusted(java.util.List<byte[]> asn1derEncodedCert, boolean chainError) {
+					return serverCertificateValidationCallback.run(new com.uno.ByteArray(asn1derEncodedCert.get(0)), chainError);
 				}
 			};
 			client.createRequest(uri, "", "", 0);
@@ -51,12 +54,13 @@ namespace Fuse.Net.Http
 			_promise.Reject(new Exception(error));
 		}
 
-		bool ServerCertificateValidationCallback(byte[] asn1derEncodedCert)
+		bool ServerCertificateValidationCallback(byte[] asn1derEncodedCert, bool chainError)
 		{
 			if (_client.ServerCertificateValidationCallback != null)
 			{
 				var c = new X509Certificate(asn1derEncodedCert);
-				return _client.ServerCertificateValidationCallback(c, new X509Chain(), (SslPolicyErrors)(int)0);
+				var sslPolicyErrors =  chainError ? SslPolicyErrors.RemoteCertificateChainErrors : SslPolicyErrors.None;
+				return _client.ServerCertificateValidationCallback(c, new X509Chain(), sslPolicyErrors);
 			}
 			return false;
 		}

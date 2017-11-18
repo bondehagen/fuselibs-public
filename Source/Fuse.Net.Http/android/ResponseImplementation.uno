@@ -16,11 +16,6 @@ namespace Fuse.Net.Http
 			_urlConnection = urlConnection;
 		}
 		
-		/*public int GetVersion()
-		{
-			return ((HttpURLConnection)_urlConnection).();
-		}*/
-		
 		[Foreign(Language.Java)]
 		public int GetStatusCode()
 		@{
@@ -47,13 +42,6 @@ namespace Fuse.Net.Http
 		@{
 			HttpURLConnection connection = (HttpURLConnection)@{ResponseImplementation:Of(_this)._urlConnection:Get()};
 			return connection.getHeaderFields();
-		@}
-
-		[Foreign(Language.Java)]
-		public IEnumerable<string> GetHeader(string key)
-		@{
-			/**/
-			return null;
 		@}
 
 		class MapToDictionary

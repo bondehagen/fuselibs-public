@@ -66,6 +66,14 @@ namespace System.Threading.Tasks
 }
 namespace System
 {
+	
+	[DotNetType("System.UriBuilder")]
+	extern(DOTNET) internal class UriBuilder
+	{
+		public extern UriBuilder(string scheme, string host, int portNumber);
+		public extern System.Uri Uri { get; }
+	}
+
 	[DotNetType("System.Uri")]
 	extern(DOTNET) internal class Uri
 	{
@@ -89,12 +97,23 @@ namespace System.Net
 	{
 		public extern static System.Net.Security.RemoteCertificateValidationCallback ServerCertificateValidationCallback { get; set; }
 	}
+	[DotNetType("System.Net.IWebProxy")]
+	extern(DOTNET && !HOST_MAC) internal interface IWebProxy
+	{
+		extern ICredentials Credentials { get; set; }
+		extern Uri GetProxy(Uri destination);
+		extern bool IsBypassed(Uri host);
+	}
+	[DotNetType("System.Net.ICredentials")]
+	extern(DOTNET && !HOST_MAC) internal interface ICredentials
+	{}
 }
 namespace System.Net.Http
 {
 	[DotNetType("System.Net.Http.HttpClient")]
 	extern(DOTNET && !HOST_MAC) internal class HttpClient
 	{
+		public extern HttpClient(System.Net.Http.HttpClientHandler handler);
 		public extern System.Threading.Tasks.Task<HttpResponseMessage> SendAsync(HttpRequestMessage request);
 		public extern System.Threading.Tasks.Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
 			HttpCompletionOption completionOption, System.Threading.CancellationToken cancellationToken);
@@ -156,5 +175,15 @@ namespace System.Net.Http
 	[DotNetType("System.Net.Http.HttpClientHandler")]
 	extern(DOTNET && !HOST_MAC) internal class HttpClientHandler
 	{
+		public extern bool AllowAutoRedirect { get; set; }
+		public extern System.Net.IWebProxy Proxy { get; set; }
+		public extern bool UseProxy { get; set; }
+		//public X509CertificateCollection ClientCertificates { get; }
 	}
+
+
+
+ /*System.Security.Cryptography.X509Certificates
+	public class X509CertificateCollection
+	protected IList List { get; }*/
 }

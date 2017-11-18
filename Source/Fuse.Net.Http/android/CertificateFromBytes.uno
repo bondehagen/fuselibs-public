@@ -16,21 +16,20 @@ namespace Fuse.Net.Http
 		public static X509Certificate Load(byte[] data)
 		{
 			var buf = ForeignDataView.Create(data);
-			//var inputStream = MakeBufferInputStream(buf);
-			var jcert = LoadCertificateFromInputStream(buf);
-			// TODO: Extract details here
-			return new X509Certificate(data);
+			var inputStream = MakeBufferInputStream(buf);
+			return new X509Certificate(LoadCertificateFromInputStream(inputStream));
 		}
 
 		[Foreign(Language.Java)]
-		static Java.Object LoadCertificateFromInputStream(Java.Object buf)
+		static byte[] LoadCertificateFromInputStream(Java.Object buf)
 		@{
 			try
 			{
 				com.fuse.android.ByteBufferInputStream inputStream = (com.fuse.android.ByteBufferInputStream)buf;
 				CertificateFactory fact = CertificateFactory.getInstance("X.509");
 				X509Certificate cer = (X509Certificate)fact.generateCertificate((InputStream)inputStream);
-				return cer;
+				System.out.println(cer.toString());
+				return new com.uno.ByteArray(cer.getEncoded());
 			}
 			catch (Exception e)
 			{

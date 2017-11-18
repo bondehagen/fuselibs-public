@@ -5,6 +5,6 @@
   ],
   "Includes": [
     "*",
-    //"msdnmicrosoftcom.der:Bundle",
+    "mitmproxy.pem:Bundle",
   ]
 }
