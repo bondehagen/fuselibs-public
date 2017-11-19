@@ -272,14 +272,14 @@ namespace Fuse.Security
 		}
 	}
 
-	public class ASN1Tools // TODO: rename Asn1Der 
+	public class Asn1Der
 	{
 		byte[] buffer;
 		int offset;
 		int _depth;
 		int _length;
 
-		public ASN1Tools(byte[] data)
+		public Asn1Der(byte[] data)
 		{
 			// NOTE: This implementation is supposed to only conform to DER (subset of BER) encoding although some rules for CER and BER also exist for future development. 
 			buffer = data;
@@ -327,7 +327,11 @@ namespace Fuse.Security
 				return null;
 
 			var startOffset = offset;
-			var node = new Asn1Node(ReadTag(), ReadLength());
+			var contentsLength = ReadLength();
+			if (contentsLength > _length) 
+				throw new Exception("Expected contents length is bigger than the total byte array");
+
+			var node = new Asn1Node(ReadTag(), contentsLength);
 			var headerLength = offset - startOffset;
 
 			node = ReadContents(node);

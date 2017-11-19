@@ -12,7 +12,7 @@ namespace Fuse.Security
 		public X509Certificate(byte[] der)
 		{
 			DerEncodedData = der;
-			var asn1 = new ASN1Tools(der).Decode();
+			var asn1 = new Asn1Der(der).Decode();
 			if (asn1 == null)
 				throw new Exception("Could not load certificate");
 
@@ -219,7 +219,7 @@ namespace Fuse.Security.X509
 		public SubjectPublicKeyInfo(AlgorithmIdentifier algorithm, byte[] subjectPublicKey)
 		{
 			Algorithm = algorithm;
-			var asn1 = new ASN1Tools(subjectPublicKey).Decode();
+			var asn1 = new Asn1Der(subjectPublicKey).Decode();
 			SubjectPublicKey = asn1[0].Data;
 			Exponent = asn1[1].AsUInt64();
 		}
