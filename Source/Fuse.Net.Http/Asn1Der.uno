@@ -327,11 +327,7 @@ namespace Fuse.Security
 				return null;
 
 			var startOffset = offset;
-			var contentsLength = ReadLength();
-			if (contentsLength > _length) 
-				throw new Exception("Expected contents length is bigger than the total byte array");
-
-			var node = new Asn1Node(ReadTag(), contentsLength);
+			var node = new Asn1Node(ReadTag(), ReadLength());
 			var headerLength = offset - startOffset;
 
 			node = ReadContents(node);

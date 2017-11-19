@@ -78,9 +78,10 @@ namespace Fuse.Net.Http
 
 			var source = new CancellationTokenSource();
 			var token = source.Token;
-			
-			ServicePointManager.ServerCertificateValidationCallback = Validate;
-			
+			if (_client.ServerCertificateValidationCallback != null)
+			{
+				ServicePointManager.ServerCertificateValidationCallback = Validate;
+			}
 			var task = client.SendAsync(new HttpRequestMessage(HttpMethod.Get, request.Url), HttpCompletionOption.ResponseHeadersRead, token);
 			task.ContinueWith(Continue);
 			//request.Dispose();
@@ -96,8 +97,11 @@ namespace Fuse.Net.Http
 			}
 			else
 			{
-				debug_log task.Exception.GetType();
-				_promise.Reject(new Uno.Exception(task.Exception.ToString()));
+				var aggregateException = task.Exception as System.AggregateException;
+				if (aggregateException != null)
+					_promise.Reject(new Uno.Exception(aggregateException.Flatten().InnerException.ToString()));
+				else
+					_promise.Reject(new Uno.Exception(task.Exception.ToString()));
 			}
 		}
 
@@ -109,7 +113,7 @@ namespace Fuse.Net.Http
 				var c = new X509Certificate(certificate.RawData);
 				return _client.ServerCertificateValidationCallback(c, new Fuse.Security.X509Chain(), (Fuse.Security.SslPolicyErrors)(int)sslPolicyErrors);
 			}
-			return false;
+			return (sslPolicyErrors != 0);
 		}
 	}
 }

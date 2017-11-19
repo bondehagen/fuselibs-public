@@ -11,7 +11,7 @@ public partial class App2
 	public App2()
 	{
 		_client = new HttpClient();
-		//_client.ClientCertificates.Add(LoadClientCertificateFromBundle());
+		//_client.ClientCertificates.Add(LoadCertificateFromBundle());
 		_client.ServerCertificateValidationCallback = ValidateServerCertificate;
 
 		InitializeUX();
@@ -20,16 +20,10 @@ public partial class App2
 	X509Certificate LoadCertificateFromBundle(string bundleFilename)
 	{
 		var bundleFile = Bundle.Get().GetFile(bundleFilename);
-		if (bundleFilename.ToLower().EndsWith(".pem") || bundleFilename.ToLower().EndsWith(".crt"))
-		{
-			var data = bundleFile.ReadAllText();
-			var begin = "-----BEGIN CERTIFICATE-----";
-			var end = "-----END CERTIFICATE-----";
-			data = data.Replace(begin, "").Replace(end, "").Replace("\n", "").Replace("\r", "");
-			var bytes = Uno.Text.Base64.GetBytes(data);
-			return new X509Certificate(bytes);
-		}
-		return LoadCertificateFromBytes.Load(bundleFile.ReadAllBytes());
+		if (bundleFile.Name.ToLower().EndsWith(".pem") || bundleFile.Name.ToLower().EndsWith(".crt"))
+			return new X509Certificate(bundleFile.ReadAllText());
+		else
+			return new X509Certificate(bundleFile.ReadAllBytes());
 	}
 
 	bool ValidateServerCertificate(X509Certificate serverCert, X509Chain certificateChain, SslPolicyErrors sslPolicyErrors)

@@ -83,8 +83,17 @@ namespace System
 	[DotNetType("System.Exception")]
 	extern(DOTNET) internal class Exception
 	{
+		public extern virtual string Message { get; }
+		public extern virtual string StackTrace { get; }
+		public extern System.Exception InnerException { get; }
 	}
 
+	[DotNetType("System.AggregateException")]
+	extern(DOTNET) internal class AggregateException : System.Exception
+	{
+		public extern AggregateException Flatten();
+		//public ReadOnlyCollection<Exception> InnerExceptions { get; }
+	}
 }
 namespace System.Net
 {

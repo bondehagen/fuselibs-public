@@ -2,9 +2,8 @@ using Uno;
 using Uno.Threading;
 using Uno.Collections;
 using Uno.Compiler.ExportTargetInterop;
-using Fuse.Security;
 
-namespace Fuse.Net.Http
+namespace Fuse.Security
 {
 	[ForeignInclude(Language.Java,
 					"java.io.InputStream",
@@ -13,11 +12,11 @@ namespace Fuse.Net.Http
 	extern(android)
 	public static class LoadCertificateFromBytes
 	{
-		public static X509Certificate Load(byte[] data)
+		public static byte[] Load(byte[] data)
 		{
 			var buf = ForeignDataView.Create(data);
 			var inputStream = MakeBufferInputStream(buf);
-			return new X509Certificate(LoadCertificateFromInputStream(inputStream));
+			return LoadCertificateFromInputStream(inputStream);
 		}
 
 		[Foreign(Language.Java)]

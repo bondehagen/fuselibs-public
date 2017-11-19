@@ -2,9 +2,8 @@ using Uno;
 using Uno.Threading;
 using Uno.Collections;
 using Uno.Compiler.ExportTargetInterop;
-using Fuse.Security;
 
-namespace Fuse.Net.Http
+namespace Fuse.Security
 {
 	[Require("Xcode.Framework", "Security.framework")]
 	[Require("Source.Include", "Security/Security.h")]
@@ -35,17 +34,17 @@ namespace Fuse.Net.Http
 	extern(iOS)
 	public static class LoadCertificateFromBytes
 	{
-		public static X509Certificate Load(byte[] data)
+		public static byte[] Load(byte[] data)
 		{
 			return Load(ForeignDataView.Create(data));
 		}
 
-		static X509Certificate Load(ForeignDataView view)
+		static byte[] Load(ForeignDataView view)
 		{
 			var certRef = Impl(view);
 			if (!SecCertificateRef.IsNull(certRef))
 			{
-				return new X509Certificate(SecCertificateRef.GetRawData(certRef));
+				return SecCertificateRef.GetRawData(certRef);
 			}
 			else
 			{
