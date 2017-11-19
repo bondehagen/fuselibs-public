@@ -20,12 +20,25 @@ namespace Fuse.Net.Http
 		public Uno.Threading.Future<Response> SendAsync(Request request)
 		{
 			_promise = new Uno.Threading.Promise<Response>();
-			connect(request.Url, Continue, Fail, ServerCertificateValidationCallback);
+			Java.Object client = connect(request.Url, Continue, Fail, ServerCertificateValidationCallback);
+			
+			foreach (var cert in _client.ClientCertificates)
+			{
+				SetClientCert((Java.Object)cert.ImplHandle, client);
+			}
+			
 			return _promise;
 		}
+		
+		[Foreign(Language.Java)]
+		void SetClientCert(Java.Object buf, Java.Object client)
+		@{
+			com.fuse.android.ByteBufferInputStream inputStream = (com.fuse.android.ByteBufferInputStream)buf;
+			((HttpClientAndroid)client).AddClientCertificate(inputStream);
+		@}
 
 		[Foreign(Language.Java)]
-		void connect(string uri, Action<Java.Object> cont, Action<string> fail, Func<byte[], bool, bool> serverCertificateValidationCallback)
+		Java.Object connect(string uri, Action<Java.Object> cont, Action<string> fail, Func<byte[], bool, bool> serverCertificateValidationCallback)
 		@{
 			HttpClientAndroid client = new HttpClientAndroid() {
 				@Override
@@ -42,6 +55,7 @@ namespace Fuse.Net.Http
 				}
 			};
 			client.createRequest(uri, "", "", 0);
+			return client;
 		@}
 
 		void Continue(Java.Object urlConnection)

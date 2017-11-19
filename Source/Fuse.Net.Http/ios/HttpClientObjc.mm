@@ -29,11 +29,11 @@
 	[request setHTTPMethod:@"GET"];
 	//[request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
 	//[request setValue:@"application/json" forHTTPHeaderField:@"Accept"];
-
+	//[connectionRequest setHTTPBody:[[options objectForKey:@"data"] dataUsingEncoding:NSUTF8StringEncoding]];
+	
 	NSString* proxyHost = @"192.168.1.20";
 	NSNumber* proxyPort = [NSNumber numberWithInt: 8080];
 
-	// Create an NSURLSessionConfiguration that uses the proxy
 	NSDictionary *proxyDict = @{
 	    @"HTTPEnable"  : [NSNumber numberWithInt:1],
 	    (NSString *)kCFStreamPropertyHTTPProxyHost  : proxyHost,
@@ -43,7 +43,6 @@
 	    (NSString *)kCFStreamPropertyHTTPSProxyHost : proxyHost,
 	    (NSString *)kCFStreamPropertyHTTPSProxyPort : proxyPort,
 	};
-
 
 	NSURLSessionConfiguration *sessionConfiguration = [NSURLSessionConfiguration defaultSessionConfiguration];
 	sessionConfiguration.connectionProxyDictionary = proxyDict;

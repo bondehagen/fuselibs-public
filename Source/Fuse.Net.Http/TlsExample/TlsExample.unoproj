@@ -5,6 +5,8 @@
   ],
   "Includes": [
     "*",
+    "certs/client/sender.pfx:Bundle",
+    "certs/server/receiver.crt:Bundle",
     "mitmproxy.pem:Bundle",
   ]
 }

@@ -8,47 +8,79 @@ namespace Fuse.Security
 	public class X509Certificate
 	{
 		public byte[] DerEncodedData { get; private set; }
+		public object ImplHandle { get; private set; }
 		
 		public X509Certificate(string data) : this(Uno.Text.Base64.GetBytes(LoadPem(data)))
 		{}
 
 		static string LoadPem(string data)
 		{
-			debug_log "LoadPem";
 			// https://tls.mbed.org/kb/cryptography/asn1-key-structures-in-der-and-pem
 			var begin = "-----BEGIN CERTIFICATE-----";
 			var end = "-----END CERTIFICATE-----";
 			return data.Replace(begin, "").Replace(end, "").Replace("\n", "").Replace("\r", "");
 		}
+		
+		public X509Certificate(byte[] der) : this(der, null) {}
 
-		public X509Certificate(byte[] der)
+		public X509Certificate(byte[] der, string password)
 		{
 			if (der == null || der.Length == 0)
-				throw new Exception("Could not load certificate");
+				throw new Exception("Could not load certificate, bytes was null or empty");
 
-			DerEncodedData = LoadCertificateFromBytes.Load(der);
+			if (password != null)
+			{
+				ImplHandle = LoadCertificateFromBytes.Load(der, password);
+				return;
+			}
+			else
+				ImplHandle = LoadCertificateFromBytes.Load(der);
+
+			DerEncodedData = LoadCertificateFromBytes.GetBytes(ImplHandle);
+			
 			var asn1 = new Asn1Der(DerEncodedData).Decode();
 			if (asn1 == null)
-				throw new Exception("Could not load certificate");
+				throw new Exception("Could not load certificate, asn1 decoding unsuccessful");
+
 			try
 			{
-				Certificate = new CertificateToBeSigned(
-					(int)asn1[0][0][0].AsUInt64()+1, asn1[0][1].AsHex(), asn1[0][2][0].AsOid(),
-					new RelativeDistinguishedName(asn1[0][3]), new Validity(asn1[0][4][0].AsDateTime(), asn1[0][4][1].AsDateTime()),
-					new RelativeDistinguishedName(asn1[0][5]),
-					new SubjectPublicKeyInfo(new AlgorithmIdentifier(asn1[0][6][0][0].AsOid()), asn1[0][6][1].Data));
-
-				Algorithm = asn1[1][0].AsOid().FriendlyName;
-				Signature = asn1[2].Data;
-				Extensions = new List<X509v3Extension>();
-				foreach (var extension in asn1[0][7][0])
+				if (asn1[0][0].Tag.IsPrimitive)
 				{
-					Extensions.Add(new X509v3Extension(extension[0].AsOid(), true, extension[1].AsString()));
+					var version = (int)asn1[0][0].AsUInt64()+1;
+					var signatureAlgorithm = asn1[0][1][0].AsOid();
+					var issuer = new RelativeDistinguishedName(asn1[0][2]);
+					var validity = new Validity(asn1[0][3][0].AsDateTime(), asn1[0][3][1].AsDateTime());
+					var subject = new RelativeDistinguishedName(asn1[0][4]);
+					var subjectPublicKeyInfo = new SubjectPublicKeyInfo(new AlgorithmIdentifier(asn1[0][5][0][0].AsOid()), asn1[0][5][1].Data);
+
+					Certificate = new CertificateToBeSigned(version, "", signatureAlgorithm, issuer, validity, subject, subjectPublicKeyInfo);
+					Algorithm = asn1[1][0].AsOid().FriendlyName;
+					Signature = asn1[2].Data;
+				}
+				else
+				{
+					var version = (int)asn1[0][0][0].AsUInt64()+1;
+					var serialNumber = asn1[0][1].AsHex();
+					var signatureAlgorithm = asn1[0][2][0].AsOid();
+					var issuer = new RelativeDistinguishedName(asn1[0][3]);
+					var validity = new Validity(asn1[0][4][0].AsDateTime(), asn1[0][4][1].AsDateTime());
+					var subject = new RelativeDistinguishedName(asn1[0][5]);
+					var subjectPublicKeyInfo = new SubjectPublicKeyInfo(new AlgorithmIdentifier(asn1[0][6][0][0].AsOid()), asn1[0][6][1].Data);
+
+					Certificate = new CertificateToBeSigned(version, serialNumber, signatureAlgorithm, issuer, validity, subject, subjectPublicKeyInfo);
+
+					Algorithm = asn1[1][0].AsOid().FriendlyName;
+					Signature = asn1[2].Data;
+					Extensions = new List<X509v3Extension>();
+					foreach (var extension in asn1[0][7][0])
+					{
+						Extensions.Add(new X509v3Extension(extension[0].AsOid(), true, extension[1].AsString()));
+					}
 				}
 			}
 			catch(Exception e)
 			{
-				throw new Exception("Could not load certificate");
+				throw new Exception("Could not load certificate, error extracting asn1 data. " + e.ToString());
 			}
 		}
 

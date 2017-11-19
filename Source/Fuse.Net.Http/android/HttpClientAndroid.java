@@ -2,6 +2,9 @@ package com.fusetools.http;
 
 import android.os.AsyncTask;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -33,6 +36,8 @@ import android.util.Base64;
 
 
 public abstract class HttpClientAndroid extends AsyncTask<URL, Integer, Long> {
+
+	private InputStream _clientCertificate;
 
 	public abstract void onHeadersReceived(HttpURLConnection urlConnection);
 
@@ -74,8 +79,8 @@ public abstract class HttpClientAndroid extends AsyncTask<URL, Integer, Long> {
 			// TODO: READ https://stackoverflow.com/questions/1936872/how-to-keep-multiple-java-httpconnections-open-to-same-destination/1936965#1936965
 			HttpURLConnection connection = null;
 			try {
-				Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("192.168.1.233", 8080));
-				//Proxy proxy = Proxy.NO_PROXY;
+				//Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("192.168.1.233", 8080));
+				Proxy proxy = Proxy.NO_PROXY;
 				connection = (HttpURLConnection) url.openConnection(proxy);
 				connection.setRequestMethod("GET");
 				connection.setConnectTimeout(3000);
@@ -105,14 +110,27 @@ public abstract class HttpClientAndroid extends AsyncTask<URL, Integer, Long> {
 								return true;
 							}});*/
 
+
+
+						InputStream fis = _clientCertificate;
+						String clientCertPassword = "1234";
+
+						KeyStore keyStore = KeyStore.getInstance("PKCS12");
+						keyStore.load(fis, clientCertPassword.toCharArray());
+
+						javax.net.ssl.KeyManagerFactory kmf = javax.net.ssl.KeyManagerFactory.getInstance("X509");
+						kmf.init(keyStore, clientCertPassword.toCharArray());
+
+						javax.net.ssl.KeyManager[] keyManagers = kmf.getKeyManagers();
+
 						TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-						tmf.init((KeyStore) null);
+						tmf.init(keyStore);
 
 						TrustManager[] trustManagers = tmf.getTrustManagers();
 						X509TrustManager tm = (X509TrustManager) trustManagers[0];
 
 						SSLContext context = SSLContext.getInstance("TLS");
-						context.init(null, new X509TrustManager[]{new CustomX509TrustManager(tm, url.getHost())}, new SecureRandom());
+						context.init(keyManagers, new X509TrustManager[]{new CustomX509TrustManager(tm, url.getHost())}, null);
 
 						if (context != null) {
 							sslConnection.setSSLSocketFactory(context.getSocketFactory());
@@ -150,6 +168,10 @@ public abstract class HttpClientAndroid extends AsyncTask<URL, Integer, Long> {
 	// This is called when doInBackground() is finished
 	protected void onPostExecute(Long result) {
 		//showNotification("Downloaded " + result + " bytes");
+	}
+
+	public void AddClientCertificate(InputStream inputStream) {
+		_clientCertificate = inputStream;
 	}
 
 	class CustomX509TrustManager implements X509TrustManager {

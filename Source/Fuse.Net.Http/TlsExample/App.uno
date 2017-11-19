@@ -11,7 +11,8 @@ public partial class App2
 	public App2()
 	{
 		_client = new HttpClient();
-		//_client.ClientCertificates.Add(LoadCertificateFromBundle());
+		var bundleFile = Bundle.Get().GetFile("certs/client/sender.pfx");
+		_client.ClientCertificates.Add(new X509Certificate(bundleFile.ReadAllBytes(), "1234"));
 		_client.ServerCertificateValidationCallback = ValidateServerCertificate;
 
 		InitializeUX();
@@ -37,10 +38,12 @@ public partial class App2
 		// do pinning against the public key (SubjectPublicKeyInfo)
 		// or we can just check if there is a CA installed that accepts the server.
 		// maybe both
+		debug_log serverCert.Certificate.SubjectPublicKeyInfo.ToString();
 		var localCert = LoadCertificateFromBundle("mitmproxy.pem");
+		debug_log localCert.Certificate.SubjectPublicKeyInfo.ToString();
 		if (localCert.Certificate.SubjectPublicKeyInfo.ToString() == serverCert.Certificate.SubjectPublicKeyInfo.ToString())
 			return true;
-
+debug_log sslPolicyErrors;
 		if (sslPolicyErrors == SslPolicyErrors.None)
 		{
 			return true;
@@ -56,7 +59,7 @@ public partial class App2
 			if (!this.isBusy.IsActive)
 			{
 				this.isBusy.IsActive = true;
-				var request = new Request("GET", "https://fusetools.com");
+				var request = new Request("GET", "https://192.168.1.187:80");
 				_client.Send(request).Then(HandleResponse, Error);
 			}
 		}

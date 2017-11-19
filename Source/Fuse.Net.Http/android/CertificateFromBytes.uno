@@ -12,23 +12,50 @@ namespace Fuse.Security
 	extern(android)
 	public static class LoadCertificateFromBytes
 	{
-		public static byte[] Load(byte[] data)
+		public static object Load(byte[] data)
 		{
 			var buf = ForeignDataView.Create(data);
 			var inputStream = MakeBufferInputStream(buf);
 			return LoadCertificateFromInputStream(inputStream);
 		}
 
+		public static object Load(byte[] data, string password)
+		{
+			var buf = ForeignDataView.Create(data);
+			return MakeBufferInputStream(buf);
+		}
+
+		public static byte[] GetBytes(object certificateHandle)
+		{
+			var bytes = InternalGetBytes((Java.Object)certificateHandle);
+			if (bytes == null)
+				bytes = InternalGetBytes(LoadCertificateFromInputStream((Java.Object)certificateHandle));
+
+			return bytes;
+		}
+
 		[Foreign(Language.Java)]
-		static byte[] LoadCertificateFromInputStream(Java.Object buf)
+		static byte[] InternalGetBytes(Java.Object certificateHandle)
+		@{
+			if (certificateHandle instanceof X509Certificate) {
+				try {
+					X509Certificate cer = (X509Certificate)certificateHandle;
+					return new com.uno.ByteArray(cer.getEncoded());
+				} catch (Exception e) {
+					return null;
+				}
+			}
+			return null;
+		@}
+
+		[Foreign(Language.Java)]
+		static Java.Object LoadCertificateFromInputStream(Java.Object buf)
 		@{
 			try
 			{
 				com.fuse.android.ByteBufferInputStream inputStream = (com.fuse.android.ByteBufferInputStream)buf;
 				CertificateFactory fact = CertificateFactory.getInstance("X.509");
-				X509Certificate cer = (X509Certificate)fact.generateCertificate((InputStream)inputStream);
-				System.out.println(cer.toString());
-				return new com.uno.ByteArray(cer.getEncoded());
+				return (X509Certificate)fact.generateCertificate((InputStream)inputStream);
 			}
 			catch (Exception e)
 			{

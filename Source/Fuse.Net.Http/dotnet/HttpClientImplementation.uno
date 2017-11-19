@@ -57,23 +57,27 @@ namespace Fuse.Net.Http
 			    }
 			}
 
-			//specify to use TLS 1.2 as default connection
-			System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
-
 			httpClient.BaseAddress = new Uri("https://foobar.com/");
 			httpClient.DefaultRequestHeaders.Accept.Clear();
 			httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));*/
+
+			//specify to use TLS 1.2 as default connection
+			System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
+
 			var handler = new HttpClientHandler()
             {
                 Proxy = new Proxy("192.168.1.233", 8080),
-                UseProxy = true,
+                UseProxy = false,
             };
             handler.AllowAutoRedirect = true;
             /*	
-			handler.ClientCertificateOptions = ClientCertificateOption.Manual;
-			handler.SslProtocols = SslProtocols.Tls12;
-			handler.ClientCertificates.Add(new X509Certificate2("cert.crt"));
-			*/
+			handler.ClientCertificateOptions = ClientCertificateOption.Manual;*/
+			
+			foreach (var cert in _client.ClientCertificates)
+			{
+				handler.ClientCertificates.Add((X509Certificate2)cert.ImplHandle);
+			}
+
 			var client = new System.Net.Http.HttpClient(handler);
 
 			var source = new CancellationTokenSource();
@@ -108,12 +112,20 @@ namespace Fuse.Net.Http
 		bool Validate(object sender, System.Security.Cryptography.X509Certificates.X509Certificate2 certificate,
 			System.Security.Cryptography.X509Certificates.X509Chain chain, System.Net.Security.SslPolicyErrors sslPolicyErrors)
 		{
-			if (_client.ServerCertificateValidationCallback != null)
+			try
 			{
-				var c = new X509Certificate(certificate.RawData);
-				return _client.ServerCertificateValidationCallback(c, new Fuse.Security.X509Chain(), (Fuse.Security.SslPolicyErrors)(int)sslPolicyErrors);
+				if (_client.ServerCertificateValidationCallback != null)
+				{
+					var c = new Fuse.Security.X509Certificate(certificate.RawData);
+					return _client.ServerCertificateValidationCallback(c, new Fuse.Security.X509Chain(), (Fuse.Security.SslPolicyErrors)(int)sslPolicyErrors);
+				}
+				return (sslPolicyErrors != 0);
 			}
-			return (sslPolicyErrors != 0);
+			catch(Uno.Exception e)
+			{
+				debug_log e;
+				return false;
+			}
 		}
 	}
 }
