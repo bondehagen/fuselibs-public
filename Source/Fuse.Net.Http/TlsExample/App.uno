@@ -25,8 +25,7 @@ public partial class App2
 			var data = bundleFile.ReadAllText();
 			var begin = "-----BEGIN CERTIFICATE-----";
 			var end = "-----END CERTIFICATE-----";
-			data = data.Replace(begin, "");
-			data = data.Replace(end, "");
+			data = data.Replace(begin, "").Replace(end, "").Replace("\n", "").Replace("\r", "");
 			var bytes = Uno.Text.Base64.GetBytes(data);
 			return new X509Certificate(bytes);
 		}

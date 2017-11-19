@@ -13,6 +13,9 @@ namespace Fuse.Security
 		{
 			DerEncodedData = der;
 			var asn1 = new ASN1Tools(der).Decode();
+			if (asn1 == null)
+				throw new Exception("Could not load certificate");
+
 			Certificate = new CertificateToBeSigned(
 				(int)asn1[0][0][0].AsUInt64()+1, asn1[0][1].AsHex(), asn1[0][2][0].AsOid(),
 				new RelativeDistinguishedName(asn1[0][3]), new Validity(asn1[0][4][0].AsDateTime(), asn1[0][4][1].AsDateTime()),
