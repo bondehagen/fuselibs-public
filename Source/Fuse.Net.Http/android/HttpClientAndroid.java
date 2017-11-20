@@ -2,8 +2,7 @@ package com.fusetools.http;
 
 import android.os.AsyncTask;
 
-import java.io.File;
-import java.io.FileInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -26,7 +25,9 @@ import java.util.Collections;
 import java.util.List;
 
 import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import javax.net.ssl.TrustManagerFactory;
@@ -37,7 +38,8 @@ import android.util.Base64;
 
 public abstract class HttpClientAndroid extends AsyncTask<URL, Integer, Long> {
 
-	private InputStream _clientCertificate;
+	private byte[] _clientCertificate;
+	private String _clientCertificatePassword;
 
 	public abstract void onHeadersReceived(HttpURLConnection urlConnection);
 
@@ -104,33 +106,30 @@ public abstract class HttpClientAndroid extends AsyncTask<URL, Integer, Long> {
 						connection.connect();
 					} else {
 						HttpsURLConnection sslConnection = (HttpsURLConnection) connection;
-						/*sslConnection.setHostnameVerifier(new HostnameVerifier(){
+						sslConnection.setHostnameVerifier(new HostnameVerifier(){
 							public boolean verify(String hostname, SSLSession session) {
 								System.out.println(hostname);
 								return true;
-							}});*/
+							}});
+						
+						javax.net.ssl.KeyManager[] keyManagers = null;
+						KeyStore keyStore = null;
+						if (_clientCertificate != null) {
+							InputStream fis =  new ByteArrayInputStream(_clientCertificate);
+							keyStore = KeyStore.getInstance("PKCS12");
+							keyStore.load(fis, _clientCertificatePassword.toCharArray());
 
-
-
-						InputStream fis = _clientCertificate;
-						String clientCertPassword = "1234";
-
-						KeyStore keyStore = KeyStore.getInstance("PKCS12");
-						keyStore.load(fis, clientCertPassword.toCharArray());
-
-						javax.net.ssl.KeyManagerFactory kmf = javax.net.ssl.KeyManagerFactory.getInstance("X509");
-						kmf.init(keyStore, clientCertPassword.toCharArray());
-
-						javax.net.ssl.KeyManager[] keyManagers = kmf.getKeyManagers();
-
+							javax.net.ssl.KeyManagerFactory kmf = javax.net.ssl.KeyManagerFactory.getInstance("X509");
+							kmf.init(keyStore, _clientCertificatePassword.toCharArray());
+							keyManagers = kmf.getKeyManagers();
+						}
 						TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
 						tmf.init(keyStore);
 
 						TrustManager[] trustManagers = tmf.getTrustManagers();
 						X509TrustManager tm = (X509TrustManager) trustManagers[0];
-
 						SSLContext context = SSLContext.getInstance("TLS");
-						context.init(keyManagers, new X509TrustManager[]{new CustomX509TrustManager(tm, url.getHost())}, null);
+						context.init(keyManagers, new X509TrustManager[]{ new CustomX509TrustManager(tm, url.getHost()) }, null);
 
 						if (context != null) {
 							sslConnection.setSSLSocketFactory(context.getSocketFactory());
@@ -170,8 +169,9 @@ public abstract class HttpClientAndroid extends AsyncTask<URL, Integer, Long> {
 		//showNotification("Downloaded " + result + " bytes");
 	}
 
-	public void AddClientCertificate(InputStream inputStream) {
-		_clientCertificate = inputStream;
+	public void AddClientCertificate(byte[] data, String password) {
+		_clientCertificate = data;
+		_clientCertificatePassword = password;
 	}
 
 	class CustomX509TrustManager implements X509TrustManager {

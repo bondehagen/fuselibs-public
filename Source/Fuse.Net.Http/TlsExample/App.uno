@@ -90,7 +90,7 @@ debug_log sslPolicyErrors;
 				debug_log "----- Body -----------";
 				var body = response.GetBodyAsString();
 				//var bbody = response.GetBodyAsByteArray();
-				debug_log body.Substring(0, 200);
+				debug_log body.Substring(0, 47);
 				debug_log "----------------------";
 			}
 			else

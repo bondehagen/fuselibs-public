@@ -8,7 +8,10 @@ namespace Fuse.Security
 	public class X509Certificate
 	{
 		public byte[] DerEncodedData { get; private set; }
+		
 		public object ImplHandle { get; private set; }
+		public byte[] RawBytes { get; private set; }
+		public string Password { get; private set; }
 		
 		public X509Certificate(string data) : this(Uno.Text.Base64.GetBytes(LoadPem(data)))
 		{}
@@ -28,6 +31,9 @@ namespace Fuse.Security
 			if (der == null || der.Length == 0)
 				throw new Exception("Could not load certificate, bytes was null or empty");
 
+			RawBytes = der;
+			Password = password;
+			
 			if (password != null)
 			{
 				ImplHandle = LoadCertificateFromBytes.Load(der, password);

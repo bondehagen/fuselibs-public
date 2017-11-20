@@ -31,9 +31,20 @@ namespace Fuse.Net.Http
 		{
 			_client = Create();
 			_promise = new Uno.Threading.Promise<Response>();
+			foreach (var cert in _httpClient.ClientCertificates)
+			{
+				AddClientCertificate(cert.RawBytes, cert.Password);
+			}
 			Connect(request.Url, Continue, ServerCertificateValidationCallback);
 			return _promise;
 		}
+
+		[Foreign(Language.ObjC)]
+		void AddClientCertificate(byte[] data, string pass)
+		@{
+			const uint8_t *arrPtr = (const uint8_t *)[data unoArray]->Ptr();
+			[@{HttpClientImplementation:Of(_this)._client:Get()} addClientCertificate:arrPtr length:[data count] password:pass]:
+		@}
 
 		bool ServerCertificateValidationCallback(byte[] asn1derEncodedCert)
 		{

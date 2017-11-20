@@ -24,17 +24,16 @@ namespace Fuse.Net.Http
 			
 			foreach (var cert in _client.ClientCertificates)
 			{
-				SetClientCert((Java.Object)cert.ImplHandle, client);
+				SetClientCert(cert.RawBytes, client, cert.Password);
 			}
 			
 			return _promise;
 		}
 		
 		[Foreign(Language.Java)]
-		void SetClientCert(Java.Object buf, Java.Object client)
+		void SetClientCert(byte[] buf, Java.Object client, string pass)
 		@{
-			com.fuse.android.ByteBufferInputStream inputStream = (com.fuse.android.ByteBufferInputStream)buf;
-			((HttpClientAndroid)client).AddClientCertificate(inputStream);
+			((HttpClientAndroid)client).AddClientCertificate(buf.copyArray(), pass);
 		@}
 
 		[Foreign(Language.Java)]

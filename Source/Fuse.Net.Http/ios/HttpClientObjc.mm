@@ -21,6 +21,10 @@
 	return self;
 }
 
+- (void)addClientCertificate:(const uint8_t *)data length:(NSUInteger)length password:(NSString *)pass {
+	NSData * clientCert = [NSData dataWithBytes: data length: sizeof(unsigned char) * length];
+}
+
 - (void)connect:(NSString *)url onCompleteHandler:(void (^)(NSHTTPURLResponse *, uint8_t *, NSUInteger))completeHandler onCheckServerCertificate:(BOOL (^)(uint8_t *, NSUInteger))checkServerCertificate {
 
 	self.onCheckServerCertificate = checkServerCertificate;
