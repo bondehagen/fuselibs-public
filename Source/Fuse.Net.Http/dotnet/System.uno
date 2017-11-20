@@ -188,7 +188,7 @@ namespace System.Security.Cryptography.X509Certificates
 		public extern byte[] RawData { get; }
 		public extern void Import(byte[] rawData);
 		public extern void Import(string filename, string password, X509KeyStorageFlags keyStorageFlags);
-		public extern override void Import(byte[] rawData, string password, X509KeyStorageFlags keyStorageFlags);
+		public extern void Import(byte[] rawData, string password, X509KeyStorageFlags keyStorageFlags);
 	}
 	
 	[DotNetType("System.Security.Cryptography.X509Certificates.X509KeyStorageFlags")]

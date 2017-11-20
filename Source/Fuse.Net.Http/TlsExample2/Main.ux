@@ -1,0 +1,31 @@
+<App Background="#311B92">
+	<JavaScript>
+		var Observable = require("FuseJS/Observable");
+		var client = require("SecureHttp");
+		var isBusy = Observable(false);
+		
+		function send() {
+			isBusy.value = true;
+			client.sendRequest().then(function(payload) {
+				isBusy.value = false;
+				console.log(payload);
+			}).catch(function(error){
+				isBusy.value = false;
+				console.log(error);
+			});
+		}
+		module.exports = {
+			sendRequest: send,
+			isBusy: isBusy
+		};
+	</JavaScript>
+	<Panel Clicked="{sendRequest}" HitTestMode="LocalBounds">
+		<Busy ux:Name="isBusy" IsActive="{isBusy}" />
+		<WhileBusy>
+			<Change loadingPanel.Opacity="1" Duration=".2" />
+		</WhileBusy>
+		<LoadingIndicator ux:Name="loadingPanel" Opacity="0" ThemeColor="#fff" />
+		
+		<Text Color="#fff6" Alignment="Bottom" TextAlignment="Center" Margin="0,40">Tap anywhere to start request</Text>
+	</Panel>
+</App>

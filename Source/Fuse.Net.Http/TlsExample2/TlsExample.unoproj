@@ -1,0 +1,14 @@
+{
+  "Packages": [
+  	"Fuse",
+    "FuseJS"
+  ],
+  "Projects": [
+    "../Fuse.Net.Http/Fuse.Net.Http.unoproj"
+  ],
+  "Includes": [
+    "*",
+    "certs/client/sender.pfx:Bundle",
+    "certs/server/receiver.crt:Bundle",
+  ]
+}
