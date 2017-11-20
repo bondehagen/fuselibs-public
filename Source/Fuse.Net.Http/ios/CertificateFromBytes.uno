@@ -12,15 +12,15 @@ namespace Fuse.Security
 	[Set("DefaultValue", "NULL")]
 	[Set("FileExtension", "mm")]
 	[TargetSpecificType]
-	extern(iOS) struct SecCertificateRef
+	extern(iOS) struct SecCertificateHandle
 	{
-		public static bool IsNull(SecCertificateRef lhs)
+		public static bool IsNull(SecCertificateHandle lhs)
 		{
 			return extern<bool>(lhs)"$0 == NULL";
 		}
 		
 		[Foreign(Language.ObjC)]
-		public static byte[] GetRawData(SecCertificateRef lhs)
+		public static byte[] GetRawData(SecCertificateHandle lhs)
 		@{
 			CFDataRef dataref = SecCertificateCopyData(lhs);
 			NSData* data = CFBridgingRelease(dataref);
@@ -30,31 +30,41 @@ namespace Fuse.Security
 		@}
 	}
 
-	[Require("Entity","SecCertificateRef")]
-	extern(iOS)
-	public static class LoadCertificateFromBytes
+	[Require("Entity","SecCertificateHandle")]
+	extern(iOS) public static class LoadCertificateFromBytes
 	{
-		public static byte[] Load(byte[] data)
+		public static object Load(byte[] data)
 		{
-			return Load(ForeignDataView.Create(data));
+			var fdv = ForeignDataView.Create(data);
+			return Load(fdv);
 		}
 
-		static byte[] Load(ForeignDataView view)
+		public static object Load(byte[] data, string password)
+		{
+			var fdv = ForeignDataView.Create(data);
+			return Load(fdv);
+		}
+
+		public static byte[] GetBytes(object certificateHandle)
+		{
+			return SecCertificateHandle.GetRawData((SecCertificateHandle)certificateHandle);
+		}
+
+		static object Load(ForeignDataView view)
 		{
 			var certRef = Impl(view);
-			if (!SecCertificateRef.IsNull(certRef))
+			if (!SecCertificateHandle.IsNull(certRef))
 			{
-				return SecCertificateRef.GetRawData(certRef);
+				return certRef;
 			}
 			else
 			{
-				throw new Exception("LoadCertificateFromBytes Failed. Certificate was null");
 				return null;
 			}
 		}
 
 		[Foreign(Language.ObjC)]
-		static SecCertificateRef Impl(ForeignDataView view)
+		static SecCertificateHandle Impl(ForeignDataView view)
 		@{
 			return SecCertificateCreateWithData(NULL, (__bridge CFDataRef)view);
 		@}

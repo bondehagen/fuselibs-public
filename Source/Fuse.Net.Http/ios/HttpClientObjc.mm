@@ -30,8 +30,8 @@
 	//[request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
 	//[request setValue:@"application/json" forHTTPHeaderField:@"Accept"];
 	//[connectionRequest setHTTPBody:[[options objectForKey:@"data"] dataUsingEncoding:NSUTF8StringEncoding]];
-	
-	NSString* proxyHost = @"192.168.1.20";
+
+	NSString* proxyHost = @"192.168.1.233";
 	NSNumber* proxyPort = [NSNumber numberWithInt: 8080];
 
 	NSDictionary *proxyDict = @{
@@ -45,7 +45,7 @@
 	};
 
 	NSURLSessionConfiguration *sessionConfiguration = [NSURLSessionConfiguration defaultSessionConfiguration];
-	sessionConfiguration.connectionProxyDictionary = proxyDict;
+	//sessionConfiguration.connectionProxyDictionary = proxyDict;
 	sessionConfiguration.timeoutIntervalForRequest = 5;
 	NSURLSession *session = [NSURLSession sessionWithConfiguration:sessionConfiguration delegate:self delegateQueue:Nil];
 
@@ -106,22 +106,55 @@ didCompleteWithError:(NSError *)error
 {
 	//https://developer.apple.com/library/content/documentation/Cocoa/Conceptual/URLLoadingSystem/Articles/AuthenticationChallenges.html#//apple_ref/doc/uid/TP40009507-SW1
 	NSLog(@"didReceiveChallenge");
-	NSURLSessionAuthChallengeDisposition disposition = NSURLSessionAuthChallengePerformDefaultHandling;
-	__block NSURLCredential *credential = nil;
-	completionHandler(disposition, credential);
-/*	
-	SecTrustRef serverTrust = challenge.protectionSpace.serverTrust;
-    SecCertificateRef certificate = SecTrustGetCertificateAtIndex(serverTrust, 0);
 	
-    NSString* summary = (NSString*)CFBridgingRelease(SecCertificateCopySubjectSummary(certificate));
-    NSLog(@"Cert summary: %@", summary);
-    
-    CFDataRef dataref = SecCertificateCopyData(certificate);
-    
-    NSData* data = CFBridgingRelease(dataref);
-	BOOL res = self.onCheckServerCertificate((uint8_t *)[data bytes], [data length]);
+	NSURLProtectionSpace *protectionSpace = [challenge protectionSpace];
+	NSString *authenticationMethod = [protectionSpace authenticationMethod];
+	
+	NSLog(@"auth %@", authenticationMethod);
+    if ([authenticationMethod isEqualToString:NSURLAuthenticationMethodClientCertificate])
+    {
+    	NSLog(@"Client challenge");
+    	SecIdentityRef identity = [KeychainUtilities retrieveIdentityWithPersistentRef:self.accountCertKeychainRef];
 
-	completionHandler(NSURLSessionAuthChallengeUseCredential, [NSURLCredential credentialForTrust:challenge.protectionSpace.serverTrust]);*/
+        NSURLCredential* credential = [CertificateUtilities getCredentialFromCert:identity];
+
+        if ( credential == nil )
+        {
+            [[challenge sender] cancelAuthenticationChallenge:challenge];
+        }
+        else
+        {
+            [[challenge sender] useCredential:credential forAuthenticationChallenge:challenge];
+        }
+    }
+    else if ([authenticationMethod isEqualToString:NSURLAuthenticationMethodServerTrust])
+    {
+
+		SecTrustRef serverTrust = challenge.protectionSpace.serverTrust;
+		SecCertificateRef certificate = SecTrustGetCertificateAtIndex(serverTrust, 0);
+
+		NSString* summary = (NSString*)CFBridgingRelease(SecCertificateCopySubjectSummary(certificate));
+		NSLog(@"Cert summary: %@", summary);
+
+		CFDataRef dataref = SecCertificateCopyData(certificate);
+
+		NSData* data = CFBridgingRelease(dataref);
+		BOOL res = self.onCheckServerCertificate((uint8_t *)[data bytes], [data length]);
+		if (res)
+		{
+			completionHandler(NSURLSessionAuthChallengeUseCredential, [NSURLCredential credentialForTrust:challenge.protectionSpace.serverTrust]);
+		}
+		else
+		{
+			NSURLSessionAuthChallengeDisposition disposition = NSURLSessionAuthChallengePerformDefaultHandling;
+			__block NSURLCredential *credential = nil;
+			completionHandler(disposition, credential);
+		}
+	}
+	else
+    {
+		[[challenge sender] cancelAuthenticationChallenge:challenge];
+    }
 }
 
 /*
