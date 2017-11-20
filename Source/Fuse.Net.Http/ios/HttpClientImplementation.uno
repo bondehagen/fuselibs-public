@@ -43,7 +43,7 @@ namespace Fuse.Net.Http
 		void AddClientCertificate(byte[] data, string pass)
 		@{
 			const uint8_t *arrPtr = (const uint8_t *)[data unoArray]->Ptr();
-			[@{HttpClientImplementation:Of(_this)._client:Get()} addClientCertificate:arrPtr length:[data count] password:pass]:
+			[@{HttpClientImplementation:Of(_this)._client:Get()} addClientCertificate:arrPtr length:[data count] password:pass];
 		@}
 
 		bool ServerCertificateValidationCallback(byte[] asn1derEncodedCert)
