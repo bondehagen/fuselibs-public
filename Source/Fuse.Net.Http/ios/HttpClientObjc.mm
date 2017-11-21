@@ -109,7 +109,6 @@ didCompleteWithError:(NSError *)error
 		willPerformHTTPRedirection:(NSHTTPURLResponse *)redirectResponse
 		newRequest:(NSURLRequest *)request
 		completionHandler:(void (^)(NSURLRequest *))completionHandler {
-	NSLog(@"redirect?");
 	NSURLRequest *newRequest = request;
 	completionHandler(newRequest);
 }
@@ -119,8 +118,7 @@ didCompleteWithError:(NSError *)error
 {
 	NSURLProtectionSpace *protectionSpace = [challenge protectionSpace];
 	NSString *authenticationMethod = [protectionSpace authenticationMethod];
-	
-	NSLog(@"auth %@", authenticationMethod);
+
 	if ([authenticationMethod isEqualToString:NSURLAuthenticationMethodClientCertificate])
 	{
 		SecCertificateRef certificateRef = NULL;
@@ -133,23 +131,17 @@ didCompleteWithError:(NSError *)error
 																   certificates:certificateArray
 																	persistence:persistence];
 
-		if ( credential == nil )
-		{
-			[[challenge sender] cancelAuthenticationChallenge:challenge];
-		}
-		else
+		if ( credential != nil )
 		{
 			completionHandler(NSURLSessionAuthChallengeUseCredential, credential);
+			return;
 		}
 	}
 	else if ([authenticationMethod isEqualToString:NSURLAuthenticationMethodServerTrust])
 	{
-
 		SecTrustRef serverTrust = challenge.protectionSpace.serverTrust;
 		SecCertificateRef certificate = SecTrustGetCertificateAtIndex(serverTrust, 0);
 
-		NSString* summary = (NSString*)CFBridgingRelease(SecCertificateCopySubjectSummary(certificate));
-		NSLog(@"Cert summary: %@", summary);
 
 		CFDataRef dataref = SecCertificateCopyData(certificate);
 
