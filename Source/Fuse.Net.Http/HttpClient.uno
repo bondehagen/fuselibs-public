@@ -11,7 +11,7 @@ namespace Fuse.Net.Http
 		IList<X509Certificate> _clientCertificates;
 		public Func<X509Certificate, SslPolicyErrors, bool> ServerCertificateValidationCallback;
 
-		private IList<X509Certificate> ClientCertificates
+		internal IList<X509Certificate> ClientCertificates
 		{
 			get { return _clientCertificates; }
 		}

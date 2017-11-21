@@ -22,7 +22,7 @@ public class HttpJSModule : NativeModule
 
 		var bundleFile = Bundle.Get().GetFile("certs/client/sender.pfx");
 		var password = "1234";
-		_client.ClientCertificates.Add(new X509Certificate(bundleFile.ReadAllBytes(), password));
+		_client.SetClientCertificate(new X509Certificate(bundleFile.ReadAllBytes(), password));
 		_client.ServerCertificateValidationCallback = ValidateServerCertificate;
 
 		AddMember(new NativePromise<string, Fuse.Scripting.Object>("sendRequest", SendRequest, null));

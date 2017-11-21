@@ -192,7 +192,7 @@ namespace System.Security.Cryptography.X509Certificates
 	}
 	
 	[DotNetType("System.Security.Cryptography.X509Certificates.X509KeyStorageFlags")]
-	extern(DOTNET && !HOST_MAC) public enum X509KeyStorageFlags
+	extern(DOTNET) public enum X509KeyStorageFlags
 	{
 		DefaultKeySet = 0,
 		UserKeySet = 1,

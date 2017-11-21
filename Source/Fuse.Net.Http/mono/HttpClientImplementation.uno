@@ -104,40 +104,11 @@ namespace Fuse.Net.Http
 			if (_client.ServerCertificateValidationCallback != null)
 			{
 				var protectionSpace = challenge.ProtectionSpace;
-				debug_log protectionSpace.Host;
 
 				// Get remote certificate
 				var serverTrust = protectionSpace.ServerSecTrust; // contains the server's SSL certificate data
 				var certificate = serverTrust[0];
 
-				// Set SSL policies for domain name check
-				/*NSMutableArray *policies = [NSMutableArray array];
-				[policies addObject:(__bridge_transfer id)SecPolicyCreateSSL(true, (__bridge CFStringRef)challenge.protectionSpace.host)];
-				SecTrustSetPolicies(serverTrust, (__bridge CFArrayRef)policies);*/
-				serverTrust.SetPolicy(global::Security.SecPolicy.CreateSslPolicy(true, protectionSpace.Host));
-
-				// Evaluate server certificate
-				/*SecTrustResultType result;
-				SecTrustEvaluate(serverTrust, &result);
-				BOOL certificateIsValid = (result == kSecTrustResultUnspecified || result == kSecTrustResultProceed);*/
-				var result = serverTrust.Evaluate();
-				var certificateIsValid = (result == global::Security.SecTrustResult.Unspecified || result == global::Security.SecTrustResult.Proceed);
-
-				// Get local and remote cert data
-				NSData remoteCertificateData = certificate.DerData;
-				NSData localCertificate = null;//LoadCertFromBundle;
-
-				// The pinnning check
-				if (remoteCertificateData == localCertificate && certificateIsValid)
-				{
-					var credential = NSUrlCredential.FromTrust(protectionSpace.ServerSecTrust);
-					completionHandler(NSUrlSessionAuthChallengeDisposition.UseCredential, credential);
-				}
-				else
-				{
-					completionHandler(NSUrlSessionAuthChallengeDisposition.CancelAuthenticationChallenge, null);
-				}
-				return;
 
 				var x509 = certificate.ToX509Certificate2();
 				var c = new Fuse.Security.X509Certificate(x509.RawData);

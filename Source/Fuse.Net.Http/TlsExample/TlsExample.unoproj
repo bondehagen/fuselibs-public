@@ -1,7 +1,9 @@
 {
   "Packages": [
   	"Fuse",
-    "Fuse.Net.Http"
+  ],
+  "Projects": [
+    "../Fuse.Net.Http.unoproj"
   ],
   "Includes": [
     "*",

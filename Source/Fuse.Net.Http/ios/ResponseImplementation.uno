@@ -50,13 +50,6 @@ namespace Fuse.Net.Http
 			}];
 		@}
 
-		[Foreign(Language.ObjC)]
-		public IEnumerable<string> GetHeader(string key)
-		@{
-			/**/
-			return null;
-		@}
-
 		public string GetBodyAsString()
 		{
 			return Uno.Text.Utf8.GetString(_data);
