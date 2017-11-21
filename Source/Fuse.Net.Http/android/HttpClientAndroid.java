@@ -80,9 +80,10 @@ public abstract class HttpClientAndroid extends AsyncTask<URL, Integer, Long> {
 						connection.connect();
 					} else {
 						HttpsURLConnection sslConnection = (HttpsURLConnection) connection;
+						final String requestedHost = url.getHost();
 						sslConnection.setHostnameVerifier(new HostnameVerifier(){
 							public boolean verify(String hostname, SSLSession session) {
-								return hostname == url.getHost();
+								return requestedHost.equals(hostname);
 							}});
 						
 						javax.net.ssl.KeyManager[] keyManagers = null;
