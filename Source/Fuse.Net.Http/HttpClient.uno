@@ -9,11 +9,16 @@ namespace Fuse.Net.Http
 	{
 		HttpClientImplementation _impl;
 		IList<X509Certificate> _clientCertificates;
-		public Func<X509Certificate, X509Chain, SslPolicyErrors, bool> ServerCertificateValidationCallback;
+		public Func<X509Certificate, SslPolicyErrors, bool> ServerCertificateValidationCallback;
 
-		public IList<X509Certificate> ClientCertificates
+		private IList<X509Certificate> ClientCertificates
 		{
 			get { return _clientCertificates; }
+		}
+
+		public void SetClientCertificate(X509Certificate certificate)
+		{
+			ClientCertificates.Add(certificate);
 		}
 
 		public HttpClient()

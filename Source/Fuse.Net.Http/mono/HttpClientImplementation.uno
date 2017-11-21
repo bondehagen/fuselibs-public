@@ -139,9 +139,9 @@ namespace Fuse.Net.Http
 				}
 				return;
 
-				/*var x509 = certificate.ToX509Certificate2();
+				var x509 = certificate.ToX509Certificate2();
 				var c = new Fuse.Security.X509Certificate(x509.RawData);
-				var result = _client.ServerCertificateValidationCallback(c, new Fuse.Security.X509Chain(), (SslPolicyErrors)(int)0);
+				var result = _client.ServerCertificateValidationCallback(c, (SslPolicyErrors)(int)0);
 				if (result)
 				{
 					if(protectionSpace.AuthenticationMethod == "NSURLAuthenticationMethodServerTrust")
@@ -153,7 +153,7 @@ namespace Fuse.Net.Http
 							return;
 						//}
 					}
-				}*/
+				}
 			}
 			completionHandler(NSUrlSessionAuthChallengeDisposition.CancelAuthenticationChallenge, null);
 		}

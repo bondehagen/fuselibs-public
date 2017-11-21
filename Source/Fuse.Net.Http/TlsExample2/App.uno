@@ -45,7 +45,7 @@ public class HttpJSModule : NativeModule
 		return _p;
 	}
 
-	bool ValidateServerCertificate(X509Certificate serverCert, X509Chain certificateChain, SslPolicyErrors sslPolicyErrors)
+	bool ValidateServerCertificate(X509Certificate serverCert, SslPolicyErrors sslPolicyErrors)
 	{
 		debug_log "ValidateServerCertificate";
 		debug_log "Subject: " + serverCert.Certificate.Subject.Name;

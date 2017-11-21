@@ -73,7 +73,7 @@ namespace Fuse.Net.Http
 			{
 				var c = new X509Certificate(asn1derEncodedCert);
 				var sslPolicyErrors =  chainError ? SslPolicyErrors.RemoteCertificateChainErrors : SslPolicyErrors.None;
-				return _client.ServerCertificateValidationCallback(c, new X509Chain(), sslPolicyErrors);
+				return _client.ServerCertificateValidationCallback(c, sslPolicyErrors);
 			}
 			return false;
 		}

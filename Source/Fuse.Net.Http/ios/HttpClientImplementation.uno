@@ -51,7 +51,7 @@ namespace Fuse.Net.Http
 			if (_httpClient.ServerCertificateValidationCallback != null)
 			{
 				var c = new X509Certificate(asn1derEncodedCert);
-				return _httpClient.ServerCertificateValidationCallback(c, new X509Chain(), (SslPolicyErrors)(int)0);
+				return _httpClient.ServerCertificateValidationCallback(c, (SslPolicyErrors)(int)0);
 			}
 			return false;
 		}

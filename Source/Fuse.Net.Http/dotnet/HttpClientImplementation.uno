@@ -62,7 +62,7 @@ namespace Fuse.Net.Http
 			httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));*/
 
 			//specify to use TLS 1.2 as default connection
-			System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
+			System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Default;
 
 			var handler = new HttpClientHandler()
             {
@@ -117,7 +117,7 @@ namespace Fuse.Net.Http
 				if (_client.ServerCertificateValidationCallback != null)
 				{
 					var c = new Fuse.Security.X509Certificate(certificate.RawData);
-					return _client.ServerCertificateValidationCallback(c, new Fuse.Security.X509Chain(), (Fuse.Security.SslPolicyErrors)(int)sslPolicyErrors);
+					return _client.ServerCertificateValidationCallback(c, (Fuse.Security.SslPolicyErrors)(int)sslPolicyErrors);
 				}
 				return (sslPolicyErrors != 0);
 			}
