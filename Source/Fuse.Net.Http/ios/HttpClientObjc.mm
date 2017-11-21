@@ -7,7 +7,7 @@
 @interface HttpClientObjc ()
 
 	@property (nonatomic, copy) BOOL (^onCheckServerCertificate)(uint8_t *, NSUInteger);
-    @property SecIdentityRef identity;
+	@property SecIdentityRef identity;
 
 @end
 
@@ -24,29 +24,29 @@
 
 - (void)addClientCertificate:(const uint8_t *)data length:(NSUInteger)length password:(NSString *)pass {
 	NSData * p12Data = [NSData dataWithBytes: data length: sizeof(unsigned char) * length];
-    OSStatus securityError = errSecSuccess;
-    
-    CFStringRef password = (__bridge CFStringRef)pass;
-    const void *keys[] = { kSecImportExportPassphrase };
-    const void *values[] = { password };
-    
-    CFDictionaryRef options = CFDictionaryCreate(NULL, keys, values, 1, NULL, NULL);
-    
-    CFArrayRef items = CFArrayCreate(NULL, 0, 0, NULL);
-    securityError = SecPKCS12Import((__bridge CFDataRef)p12Data, options, &items);
-    
-    if (securityError == errSecSuccess) {
-        CFDictionaryRef myIdentityAndTrust = (CFDictionaryRef)CFArrayGetValueAtIndex(items, 0);
-        self.identity = (SecIdentityRef)CFDictionaryGetValue(myIdentityAndTrust, kSecImportItemIdentity);
+	OSStatus securityError = errSecSuccess;
+	
+	CFStringRef password = (__bridge CFStringRef)pass;
+	const void *keys[] = { kSecImportExportPassphrase };
+	const void *values[] = { password };
+	
+	CFDictionaryRef options = CFDictionaryCreate(NULL, keys, values, 1, NULL, NULL);
+	
+	CFArrayRef items = CFArrayCreate(NULL, 0, 0, NULL);
+	securityError = SecPKCS12Import((__bridge CFDataRef)p12Data, options, &items);
+	
+	if (securityError == errSecSuccess) {
+		CFDictionaryRef myIdentityAndTrust = (CFDictionaryRef)CFArrayGetValueAtIndex(items, 0);
+		self.identity = (SecIdentityRef)CFDictionaryGetValue(myIdentityAndTrust, kSecImportItemIdentity);
 
-        
-        CFIndex count = CFArrayGetCount(items);
-        NSLog(@"Certificates found: %ld",count);
-    }
-    
-    if (options) {
-        CFRelease(options);
-    }
+		
+		CFIndex count = CFArrayGetCount(items);
+		NSLog(@"Certificates found: %ld",count);
+	}
+	
+	if (options) {
+		CFRelease(options);
+	}
 }
 
 - (void)connect:(NSString *)url onCompleteHandler:(void (^)(NSHTTPURLResponse *, uint8_t *, NSUInteger))completeHandler onCheckServerCertificate:(BOOL (^)(uint8_t *, NSUInteger))checkServerCertificate {
@@ -142,28 +142,24 @@ didCompleteWithError:(NSError *)error
 	if ([authenticationMethod isEqualToString:NSURLAuthenticationMethodClientCertificate])
 	{
 		NSLog(@"Client challenge");
-    SecCertificateRef certificateRef = NULL;
-    SecIdentityCopyCertificate(self.identity, &certificateRef);
+		SecCertificateRef certificateRef = NULL;
+		SecIdentityCopyCertificate(self.identity, &certificateRef);
 
-    NSArray *certificateArray = [[NSArray alloc] initWithObjects:(__bridge_transfer id)(certificateRef), nil];
-    NSURLCredentialPersistence persistence = NSURLCredentialPersistenceForSession;
+		NSArray *certificateArray = [[NSArray alloc] initWithObjects:(__bridge_transfer id)(certificateRef), nil];
+		NSURLCredentialPersistence persistence = NSURLCredentialPersistenceForSession;
 
-    NSURLCredential *credential = [[NSURLCredential alloc] initWithIdentity:self.identity
-                                                               certificates:certificateArray
-                                                                persistence:persistence];
+		NSURLCredential *credential = [[NSURLCredential alloc] initWithIdentity:self.identity
+																   certificates:certificateArray
+																	persistence:persistence];
 
-		if ( credential == nil )
-		{
-			[[challenge sender] cancelAuthenticationChallenge:challenge];
-		}
-		else
+		if ( credential != nil )
 		{
 			completionHandler(NSURLSessionAuthChallengeUseCredential, credential);
+			return;
 		}
 	}
 	else if ([authenticationMethod isEqualToString:NSURLAuthenticationMethodServerTrust])
 	{
-
 		SecTrustRef serverTrust = challenge.protectionSpace.serverTrust;
 		SecCertificateRef certificate = SecTrustGetCertificateAtIndex(serverTrust, 0);
 
@@ -178,17 +174,10 @@ didCompleteWithError:(NSError *)error
 		{
 			completionHandler(NSURLSessionAuthChallengeUseCredential, [NSURLCredential credentialForTrust:challenge.protectionSpace.serverTrust]);
 		}
-		else
-		{
-			NSURLSessionAuthChallengeDisposition disposition = NSURLSessionAuthChallengePerformDefaultHandling;
-			__block NSURLCredential *credential = nil;
-			completionHandler(disposition, credential);
-		}
 	}
-	else
-	{
-		[[challenge sender] cancelAuthenticationChallenge:challenge];
-	}
+	NSURLSessionAuthChallengeDisposition disposition = NSURLSessionAuthChallengePerformDefaultHandling;
+	__block NSURLCredential *credential = nil;
+	completionHandler(disposition, credential);
 }
 
 /*

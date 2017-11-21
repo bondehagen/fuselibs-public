@@ -9,6 +9,7 @@ namespace Foundation
 	[DotNetType("Foundation.NSObject")]
 	extern(DOTNET && HOST_MAC) public class NSObject
 	{
+		public extern object Handle { get; }
 		public extern static NSObject FromObject(string str);
 		public extern override string ToString();
 	}
@@ -21,6 +22,7 @@ namespace Foundation
 	[DotNetType("Foundation.NSString")]
 	extern(DOTNET && HOST_MAC) public class NSString : NSObject
 	{
+		public extern NSString(string val);
 	}
 
 	[DotNetType("Foundation.NSNumber")]
@@ -30,11 +32,14 @@ namespace Foundation
 	}
 	
 	[DotNetType("Foundation.NSDictionary")]
-	extern(DOTNET && HOST_MAC) public class NSDictionary
+	extern(DOTNET && HOST_MAC) public class NSDictionary : NSObject
 	{
+		public extern static NSDictionary FromObjectAndKey(NSObject obj, string key);
 		public extern static NSDictionary FromObjectsAndKeys(NSObject[] objects, NSObject[] keys);
 		public extern NSObject[] Keys { get; }
 		public extern NSObject this[NSObject key] { get; }
+		public extern object this[int index] { get; }
+		public extern NSObject this[string key] { get; }
 	}
 
 	[DotNetType("Foundation.NSUrl")]
@@ -165,9 +170,21 @@ namespace Foundation
 	[DotNetType("Foundation.NSUrlCredential")]
 	extern(DOTNET && HOST_MAC) internal class NSUrlCredential
 	{
+		public extern NSUrlCredential(Security.SecTrust trust);
+		public extern NSUrlCredential(Security.SecIdentity identity, Security.SecCertificate[] certificates, NSUrlCredentialPersistence persistence);
 		public extern static NSUrlCredential FromTrust(Security.SecTrust trust);
+		public extern static NSUrlCredential FromIdentityCertificatesPersistance(Security.SecIdentity identity, Security.SecCertificate[] certificates, NSUrlCredentialPersistence persistence);
 	}
 
+	[DotNetType("Foundation.NSUrlCredentialPersistence")]
+	extern(DOTNET && HOST_MAC) internal enum NSUrlCredentialPersistence : ulong
+	{
+		None = 0ul,
+		ForSession,
+		Permanent,
+		Synchronizable
+	}
+	
 	[DotNetType("Foundation.NSUrlSessionAuthChallengeDisposition")]
 	extern(DOTNET && HOST_MAC) internal enum NSUrlSessionAuthChallengeDisposition : long
 	{
@@ -182,6 +199,10 @@ namespace Security
 	[DotNetType("Security.SecTrust")]
 	extern(DOTNET && HOST_MAC) internal class SecTrust
 	{
+		public extern SecTrust(SecCertificate cert, SecPolicy policy);
+
+		public extern SecTrust(System.Security.Cryptography.X509Certificates.X509Certificate cert, SecPolicy policy);
+
 		public extern SecCertificate this[int index] { get; }
 		
 		public extern int Count { get; }
@@ -204,14 +225,17 @@ namespace Security
 	}
 
 	[DotNetType("Security.SecPolicy")]
-	extern(DOTNET && HOST_MAC) internal class SecPolicy
+	extern(DOTNET && HOST_MAC) public class SecPolicy
 	{
 		public extern static SecPolicy CreateSslPolicy(bool server, string hostName);
+		public extern static SecPolicy CreateBasicX509Policy();
 	}
 
 	[DotNetType("Security.SecCertificate")]
 	extern(DOTNET && HOST_MAC) public class SecCertificate
 	{
+		public extern SecCertificate(byte[] data);
+
 		public extern System.Security.Cryptography.X509Certificates.X509Certificate2 ToX509Certificate2();
 		/*public extern X509Certificate2 ToX509Certificate2();*/
 		public extern Foundation.NSData DerData { get; }
@@ -230,5 +254,24 @@ namespace Security
 		public extern Foundation.NSData GetSerialNumber();
 
 		//public static extern nint GetTypeID();
+	}
+
+	[DotNetType("Security.SecIdentity")]
+	extern(DOTNET && HOST_MAC) public class SecIdentity
+	{
+		public extern static SecIdentity Import(byte[] data, string password);
+		public extern SecCertificate Certificate { get; }
+	}
+	[DotNetType("Security.SecImportExport")]
+	extern(DOTNET && HOST_MAC) public class SecImportExport
+	{
+		public extern static SecStatusCode ImportPkcs12(byte[] buffer, Foundation.NSDictionary options, out Foundation.NSDictionary[] array);
+		public extern static Foundation.NSString Identity { get; }
+		public extern static Foundation.NSString Passphrase { get; }
+	}
+
+	[DotNetType("Security.SecStatusCode")]
+	extern(DOTNET && HOST_MAC) public enum SecStatusCode
+	{
 	}
 }
