@@ -8,7 +8,6 @@ namespace Fuse.Net.Http
 	using System;
 	using System.Net;
 	using System.Net.Http;
-	//using System.Security.Authentication;
 	using System.Net.Security;
 	using System.Threading;
 	using System.Threading.Tasks;
@@ -47,31 +46,14 @@ namespace Fuse.Net.Http
 		{
 			_promise = new Uno.Threading.Promise<Response>();
 
-			/*using (var handler = new WebRequestHandler())
-			{
-			    handler.ServerCertificateValidationCallback = ...
-
-			    using (var client = new HttpClient(handler))
-			    {
-			        ...
-			    }
-			}
-
-			httpClient.BaseAddress = new Uri("https://foobar.com/");
-			httpClient.DefaultRequestHeaders.Accept.Clear();
-			httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));*/
-
-			//specify to use TLS 1.2 as default connection
 			System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Default;
 
 			var handler = new HttpClientHandler()
             {
-                Proxy = new Proxy("192.168.1.233", 8080),
+                Proxy = new Proxy("localhost", 8080),
                 UseProxy = false,
             };
             handler.AllowAutoRedirect = true;
-            /*	
-			handler.ClientCertificateOptions = ClientCertificateOption.Manual;*/
 			
 			foreach (var cert in _client.ClientCertificates)
 			{
@@ -88,7 +70,6 @@ namespace Fuse.Net.Http
 			}
 			var task = client.SendAsync(new HttpRequestMessage(HttpMethod.Get, request.Url), HttpCompletionOption.ResponseHeadersRead, token);
 			task.ContinueWith(Continue);
-			//request.Dispose();
 
 			return _promise;
 		}
@@ -123,7 +104,6 @@ namespace Fuse.Net.Http
 			}
 			catch(Uno.Exception e)
 			{
-				debug_log e;
 				return false;
 			}
 		}

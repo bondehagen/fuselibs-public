@@ -8,12 +8,12 @@ using Fuse.Scripting;
 using Fuse.Scripting.JSObjectUtils;
 
 [UXGlobalModule]
-public class HttpJSModule : NativeModule
+public class SecureHttp : NativeModule
 {
 	readonly HttpClient _client;
-	static readonly HttpJSModule _instance;
+	static readonly SecureHttp _instance;
 
-	public HttpJSModule()
+	public SecureHttp()
 	{
 		if(_instance != null) return;
 		Resource.SetGlobalKey(_instance = this, "SecureHttp");
@@ -22,7 +22,7 @@ public class HttpJSModule : NativeModule
 
 		var bundleFile = Bundle.Get().GetFile("certs/client/sender.pfx");
 		var password = "1234";
-		_client.ClientCertificates.Add(new X509Certificate(bundleFile.ReadAllBytes(), password));
+		_client.SetClientCertificate(new X509Certificate(bundleFile.ReadAllBytes(), password));
 		_client.ServerCertificateValidationCallback = ValidateServerCertificate;
 
 		AddMember(new NativePromise<string, Fuse.Scripting.Object>("sendRequest", SendRequest, null));
@@ -36,7 +36,7 @@ public class HttpJSModule : NativeModule
 		try
 		{
 			var request = new Request("GET", "https://192.168.1.187:80");
-			_client.Send(request).Then(HandleResponse, Error);
+			_client.Send(request).Then(HandleResponse, HandleError);
 		}
 		catch(Exception e)
 		{
@@ -80,7 +80,7 @@ public class HttpJSModule : NativeModule
 		}
 	}
 
-	void Error(Exception exception)
+	void HandleError(Exception exception)
 	{
 		debug_log "Request failed: " + exception.Message;
 		_p.Reject(exception);

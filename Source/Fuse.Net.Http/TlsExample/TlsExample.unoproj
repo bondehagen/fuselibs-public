@@ -1,12 +1,14 @@
 {
   "Packages": [
   	"Fuse",
-    "Fuse.Net.Http"
+    "FuseJS"
+  ],
+  "Projects": [
+    "../Fuse.Net.Http.unoproj"
   ],
   "Includes": [
     "*",
     "certs/client/sender.pfx:Bundle",
     "certs/server/receiver.crt:Bundle",
-    "mitmproxy.pem:Bundle",
   ]
 }

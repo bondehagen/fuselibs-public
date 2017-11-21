@@ -134,14 +134,6 @@ namespace Fuse.Net.Http
 		[Foreign(Language.Java)]
 		public void Dispose()
 		@{
-			// TODO: This need to be on HttpClient https://developer.android.com/reference/java/net/HttpURLConnection.html#disconnect() 
-			//((HttpURLConnection)_urlConnection).disconnect();
-			//_urlConnection = null;
 		@}
-
-		~ResponseImplementation()
-		{
-			debug_log "ResponseImplementation destroyed";
-		}
 	}
 }

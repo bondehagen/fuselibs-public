@@ -49,23 +49,8 @@ public abstract class HttpClientAndroid extends AsyncTask<URL, Integer, Long> {
 
 	public void createRequest(String uri, String method, String proxyHost, int proxyPort) {
 
-		/*HttpsURLConnection.setDefaultHostnameVerifier();
-		  HttpsURLConnection.setDefaultSSLSocketFactory(context.getSocketFactory());
-		}*/
-
 		try {
 			URL url = new URL(uri);
-			/*
-			  new AsyncTask<Void, String, String>() {
-					@Override
-					protected void onPreExecute() {
-					}
-
-					@Override
-					protected String doInBackground(Void... params) {
-					}
-			  }.execute();
-			*/
 			execute(url);
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
@@ -78,10 +63,9 @@ public abstract class HttpClientAndroid extends AsyncTask<URL, Integer, Long> {
 		try {
 			URL url = urls[0];
 
-			// TODO: READ https://stackoverflow.com/questions/1936872/how-to-keep-multiple-java-httpconnections-open-to-same-destination/1936965#1936965
 			HttpURLConnection connection = null;
 			try {
-				//Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("192.168.1.233", 8080));
+				//Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress("", 8080));
 				Proxy proxy = Proxy.NO_PROXY;
 				connection = (HttpURLConnection) url.openConnection(proxy);
 				connection.setRequestMethod("GET");
@@ -89,18 +73,8 @@ public abstract class HttpClientAndroid extends AsyncTask<URL, Integer, Long> {
 				connection.setReadTimeout(3000);
 
 				connection.setRequestMethod("GET");
-				// Already true by default but setting just in case; needs to be true since this request
-				// is carrying an input (response) body.
 				connection.setDoInput(true);
 
-				/*
-				// disable response caching
-						android.net.http.HttpResponseCache.setDefault(null);
-						// disable keepAlive
-						System.setProperty("http.keepAlive", "false");
-						// don't follow redirects
-						HttpsURLConnection.setFollowRedirects(false);
-				*/
 				try {
 					if (!(connection instanceof HttpsURLConnection)) {
 						connection.connect();
@@ -108,8 +82,7 @@ public abstract class HttpClientAndroid extends AsyncTask<URL, Integer, Long> {
 						HttpsURLConnection sslConnection = (HttpsURLConnection) connection;
 						sslConnection.setHostnameVerifier(new HostnameVerifier(){
 							public boolean verify(String hostname, SSLSession session) {
-								System.out.println(hostname);
-								return true;
+								return hostname == url.getHost();
 							}});
 						
 						javax.net.ssl.KeyManager[] keyManagers = null;
@@ -142,9 +115,6 @@ public abstract class HttpClientAndroid extends AsyncTask<URL, Integer, Long> {
 				} catch (KeyManagementException | NoSuchAlgorithmException e) {
 					e.printStackTrace();
 				}
-				//publishProgress(DownloadCallback.Progress.CONNECT_SUCCESS);
-
-				//publishProgress(DownloadCallback.Progress.GET_INPUT_STREAM_SUCCESS, 0);
 			} catch (Exception e) {
 				onFailure(e.getMessage());
 			} finally {
@@ -159,14 +129,10 @@ public abstract class HttpClientAndroid extends AsyncTask<URL, Integer, Long> {
 		return 0L;
 	}
 
-	// This is called each time you call publishProgress()
 	protected void onProgressUpdate(Integer... progress) {
-		//setProgressPercent(progress[0]);
 	}
 
-	// This is called when doInBackground() is finished
 	protected void onPostExecute(Long result) {
-		//showNotification("Downloaded " + result + " bytes");
 	}
 
 	public void AddClientCertificate(byte[] data, String password) {
@@ -203,7 +169,6 @@ public abstract class HttpClientAndroid extends AsyncTask<URL, Integer, Long> {
 			List<X509Certificate> trustedChain = new ArrayList<>();
 			Collections.addAll(trustedChain, chain);
 			try {
-				// https://www.synopsys.com/blogs/software-security/ineffective-certificate-pinning-implementations/
 				trustedChain = this.tmx.checkServerTrusted(chain, authType, this.serverHostname);
 
 			} catch (CertificateException ce) {
@@ -220,8 +185,6 @@ public abstract class HttpClientAndroid extends AsyncTask<URL, Integer, Long> {
 		}
 
 		public X509Certificate[] getAcceptedIssuers() {
-			// getAcceptedIssuers is meant to be used to determine which trust anchors the server will
-			// accept when verifying clients.
 			return new X509Certificate[0];
 		}
 	}

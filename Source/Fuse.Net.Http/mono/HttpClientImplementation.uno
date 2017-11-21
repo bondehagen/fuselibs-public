@@ -14,7 +14,6 @@ namespace Fuse.Net.Http
 		public HttpClientImplementation(HttpClient client)
 		{
 			_client = client;
-			//NSApplication.Init();
 		}
 
 		public Future<Response> SendAsync(Request request)
@@ -24,9 +23,9 @@ namespace Fuse.Net.Http
 			var nsUrlRequest = new NSMutableUrlRequest(url);
 			nsUrlRequest.HttpMethod = request.Method;
 
-			var proxyhost = "192.168.1.20";
+			var proxyhost = "localhost";
 			var proxyport = 8080;
-			var enableProxy = 1;
+			var enableProxy = 0;
 			using (var configuration = NSUrlSessionConfiguration.DefaultSessionConfiguration)
 			{
 				var values = new NSObject[]
@@ -52,7 +51,6 @@ namespace Fuse.Net.Http
 				configuration.ConnectionProxyDictionary = proxyDict;
 
 				var _session = NSUrlSession.FromConfiguration(configuration, this, null);
-				//var _session = NSUrlSession.SharedSession;
 				var task = _session.CreateDataTask(nsUrlRequest, Callback);
 				task.Resume();
 			}
@@ -79,23 +77,18 @@ namespace Fuse.Net.Http
 			{
 				_response.Reject(e);
 			}
-
-			// FinishTasksAndInvalidate() ?
 		}
 		
 		public override void DidBecomeInvalid(NSUrlSession session, NSError error)
 		{
-			debug_log "DidBecomeInvalid";
 		}
 
 		public override void DidFinishEventsForBackgroundSession(NSUrlSession session)
 		{
-			debug_log "DidFinishEventsForBackgroundSession";
 		}
 		
 		public override void WillPerformHttpRedirection(NSUrlSession session, NSUrlSessionTask task, NSHttpUrlResponse response, NSUrlRequest newRequest, Action<NSUrlRequest> completionHandler)
 		{
-			debug_log "WillPerformHttpRedirection";
 			completionHandler(newRequest);
 		}
 
@@ -106,8 +99,7 @@ namespace Fuse.Net.Http
 				var protectionSpace = challenge.ProtectionSpace;
 				debug_log protectionSpace.Host;
 
-				// Get remote certificate
-				var serverTrust = protectionSpace.ServerSecTrust; // contains the server's SSL certificate data
+				var serverTrust = protectionSpace.ServerSecTrust; 
 				var certificate = serverTrust[0];
 
 				// Set SSL policies for domain name check

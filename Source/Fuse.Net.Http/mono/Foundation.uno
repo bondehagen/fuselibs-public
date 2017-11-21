@@ -55,11 +55,6 @@ namespace Foundation
 	{
 		public extern NSMutableUrlRequest(NSUrl url);
 		public extern virtual string HttpMethod { get; set; }
-		//public virtual NSData Body { get; set; }
-		//public virtual NSInputStream BodyStream { get; set; }
-		//public virtual NSDictionary Headers { get; set; }
-		// public String this [String key] { get; set; }
-		// public virtual Boolean ShouldHandleCookies { get; set; }
 	}
 
 	[DotNetType("Foundation.NSUrlSession")]
@@ -70,7 +65,6 @@ namespace Foundation
 		{
 			get
 			{
-				//NSURLSession *session = [NSURLSession sharedSession];
 				return null;
 			}
 		}
@@ -213,14 +207,12 @@ namespace Security
 	extern(DOTNET && HOST_MAC) public class SecCertificate
 	{
 		public extern System.Security.Cryptography.X509Certificates.X509Certificate2 ToX509Certificate2();
-		/*public extern X509Certificate2 ToX509Certificate2();*/
 		public extern Foundation.NSData DerData { get; }
 		public extern string SubjectSummary { get; }
 
 		public extern string GetCommonName();
 
 		public extern string[] GetEmailAddresses();
-// ios10
 		public extern Foundation.NSData GetNormalizedIssuerSequence();
 
 		public extern Foundation.NSData GetNormalizedSubjectSequence();
@@ -228,7 +220,5 @@ namespace Security
 		public extern Foundation.NSData GetPublicKey();
 
 		public extern Foundation.NSData GetSerialNumber();
-
-		//public static extern nint GetTypeID();
 	}
 }

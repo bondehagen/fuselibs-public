@@ -4,7 +4,6 @@ namespace Fuse.Net.Http
 	{
 		public string Url { get; set; }
 		public string Method { get; set; }
-		public string Body { get; set; }
 		
 		public Request(string method, string url)
 		{

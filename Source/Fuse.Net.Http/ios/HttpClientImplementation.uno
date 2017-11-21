@@ -64,7 +64,7 @@ namespace Fuse.Net.Http
 			}
 			else
 			{
-				_promise.Reject(new Exception("SendAsync failed"));
+				_promise.Reject(new Exception("send failed"));
 			}
 			_client = null;
 		}

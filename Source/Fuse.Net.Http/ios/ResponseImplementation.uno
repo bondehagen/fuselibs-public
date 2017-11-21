@@ -25,8 +25,6 @@ namespace Fuse.Net.Http
 			return [httpResponse statusCode];
 		@}
 
-		string _statusLine = "";
-
 		public IDictionary<string, IEnumerable<string>> GetHeaders()
 		{
 			_headers = new Dictionary<string, IEnumerable<string>>();
@@ -48,13 +46,6 @@ namespace Fuse.Net.Http
 			{
 				add(key, val);
 			}];
-		@}
-
-		[Foreign(Language.ObjC)]
-		public IEnumerable<string> GetHeader(string key)
-		@{
-			/**/
-			return null;
 		@}
 
 		public string GetBodyAsString()

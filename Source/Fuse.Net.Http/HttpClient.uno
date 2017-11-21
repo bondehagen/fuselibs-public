@@ -11,7 +11,7 @@ namespace Fuse.Net.Http
 		IList<X509Certificate> _clientCertificates;
 		public Func<X509Certificate, SslPolicyErrors, bool> ServerCertificateValidationCallback;
 
-		private IList<X509Certificate> ClientCertificates
+		internal IList<X509Certificate> ClientCertificates
 		{
 			get { return _clientCertificates; }
 		}
@@ -23,7 +23,6 @@ namespace Fuse.Net.Http
 
 		public HttpClient()
 		{
-			debug_log "init HttpClient";
 			_impl = new HttpClientImplementation(this);
 			_clientCertificates = new List<X509Certificate>();
 		}
@@ -42,7 +41,7 @@ namespace Fuse.Net.Http
 
 		public Future<Response> SendAsync(Request request)
 		{
-			debug_log "Target not supported";
+			throw new Exception("Target not supported");
 			return null;
 		}
 	}

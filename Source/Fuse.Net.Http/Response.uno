@@ -11,11 +11,6 @@ namespace Fuse.Net.Http
 		{
 			_impl = impl;
 		}
-		
-		~Response()
-		{
-			debug_log "dealloc Response";
-		}
 
 		public int StatusCode { get { return _impl.GetStatusCode(); } }
 		public string ReasonPhrase { get { return Uno.Net.Http.HttpStatusReasonPhrase.GetFromStatusCode(StatusCode); } }
@@ -82,21 +77,3 @@ namespace Fuse.Net.Http
 		}
 	}
 }
-
-/*HTTP message
-	HTTP request message
-		request-line
-			method
-			URI
-			protocol version
-		HeaderFields
-		MessageBody
-			payload body
-
-	HTTP response message
-		status-line
-			HTTP-version
-			status-code
-			reason-phrase
-		HeaderFields
-*/

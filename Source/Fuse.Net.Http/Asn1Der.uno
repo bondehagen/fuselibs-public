@@ -136,8 +136,6 @@ namespace Fuse.Security
 
 		public Uno.Time.ZonedDateTime AsDateTime()
 		{
-			// TODO: Add support for GeneralizedTime
-			// "YYMMDD000000Z"
 			string date = Uno.Text.Utf8.GetString(Data);
 			var year = int.Parse("" + date[0] + date[1]);
 			var month = int.Parse("" + date[2] + date[3]);
@@ -293,20 +291,6 @@ namespace Fuse.Security
 			return ReadNext();
 		}
 
-		void Print(string str)
-		{
-			var tabs = "";
-			for (var i = 0; i < _depth; i++)
-				tabs += "  ";
-
-		//	debug_log _currentOffset +":d=" + _depth + "  hl=" + _currentHeaderLength + " l=" + _currentContentsLength + " " + tabs + str;
-		}
-
-		/*int _currentOffset = 0;
-		int _currentHeaderLength = 0;
-		int _currentContentsLength = 0;
-		int _currentDepth = 0;*/
-
 		Asn1Node ReadChildren(Asn1Node node)
 		{
 			_depth++;
@@ -328,14 +312,10 @@ namespace Fuse.Security
 
 			var startOffset = offset;
 			var node = new Asn1Node(ReadTag(), ReadLength());
-			var headerLength = offset - startOffset;
 
 			node = ReadContents(node);
 
 			node.Length = offset - startOffset;
-			var totalRead = headerLength + node.ContentsLength;
-			if (node.Length != totalRead)
-				debug_log("WARNING: expected: " + totalRead + " but got: " + node.Length);
 
 			return node;
 		}
@@ -350,13 +330,11 @@ namespace Fuse.Security
 				{
 					case TagName.SEQUENCE:
 					case TagName.SET:
-						//Print(tag.ToString());
 						return ReadChildren(node);
 
 					default:
 						if (tag.IdentifierClass == IdentifierClass.ContextSpecific)
 						{
-							//Print(tag.ToString());
 							return ReadChildren(node);
 						}
 						else
@@ -464,7 +442,6 @@ namespace Fuse.Security
 					{
 						el += ReadByte();
 					}
-					debug_log "Unknown extended length " + l;
 					return el;
 				}
 			}

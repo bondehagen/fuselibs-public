@@ -61,7 +61,6 @@ namespace System
 	extern(DOTNET) internal class AggregateException : System.Exception
 	{
 		public extern AggregateException Flatten();
-		//public ReadOnlyCollection<Exception> InnerExceptions { get; }
 	}
 }
 namespace System.Net
