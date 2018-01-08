@@ -129,7 +129,7 @@ namespace Fuse.Controls
 				_size = value;
 
 				if (_rectangle != null)
-					_rectangle.Size = _size;
+					_rectangle.ShadowSize = _size;
 
 				if (_dropShadow != null)
 					_dropShadow.Size = _size;
@@ -171,7 +171,7 @@ namespace Fuse.Controls
 						Width = new Size(100, Unit.Percent),
 						Height = new Size(100, Unit.Percent),
 						Color = _color,
-						Size = _size
+						ShadowSize = _size
 					};
 
 					// TODO: move into ShadowElement?

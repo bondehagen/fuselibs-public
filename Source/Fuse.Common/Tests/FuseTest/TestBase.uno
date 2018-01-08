@@ -62,7 +62,7 @@ namespace FuseTest
 			Diagnostics.DiagnosticReported -= OnDiagnostic;
 
 			if (_diagnosticsQueue.Count > 0)
-				throw new Exception("Unchecked, queued Diagnostics!");
+				throw new Exception("Unchecked, queued Diagnostics! Count="  + _diagnosticsQueue.Count);
 		}
 	}
 
@@ -194,6 +194,11 @@ namespace FuseTest
 		protected float GestureHardCaptureSignificanceThreshold
 		{
 			get { return Fuse.Input.Gesture.HardCaptureSignificanceThreshold; }
+		}
+		
+		protected void RequireModule<T>() where T : new()
+		{
+			TestRootPanel.RequireModule<T>();
 		}
 	}
 }

@@ -10,8 +10,8 @@ namespace Fuse.Controls
 		static EdgeNavigator()
 		{
 			ScriptClass.Register(typeof(EdgeNavigator),
-				new ScriptMethod<EdgeNavigator>("dismiss", dismiss, ExecutionThread.MainThread),
-				new ScriptMethod<EdgeNavigator>("open", open, ExecutionThread.MainThread));
+				new ScriptMethod<EdgeNavigator>("dismiss", dismiss),
+				new ScriptMethod<EdgeNavigator>("open", open));
 		}
 
 		/**
@@ -19,14 +19,8 @@ namespace Fuse.Controls
 			
 			@scriptmethod dismiss()
 		*/
-		static void dismiss(Context c, EdgeNavigator e, object[] args)
+		static void dismiss(EdgeNavigator e)
 		{
-			if (args.Length != 0)
-			{
-				Fuse.Diagnostics.UserError( "EdgeNavigator.dismiss takes no arguments", e );
-				return;
-			}
-
 			e.Dismiss();
 		}
 		
@@ -36,7 +30,7 @@ namespace Fuse.Controls
 			@scriptmethod open(edge)
 			@param edge The enum name of the edge to open @Fuse.Navigation.NavigationEdge
 		*/
-		static void open(Context c, EdgeNavigator e, object[] args)
+		static void open(EdgeNavigator e, object[] args)
 		{
 			if (args.Length != 1)
 			{

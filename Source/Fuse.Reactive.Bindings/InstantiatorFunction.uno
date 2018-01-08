@@ -36,7 +36,9 @@ namespace Fuse.Reactive
 			}
 			
 			var node = Arguments.Count > 0 ? Arguments[0] : null;
-			return new InstantiatorSubscription(this, _item, listener, context, node );
+			var ins = new InstantiatorSubscription(this, _item, listener, context, node );
+			ins.Init(context);
+			return ins;
 		}
 		
 		class InstantiatorSubscription : InnerListener
@@ -63,8 +65,10 @@ namespace Fuse.Reactive
 				_item = item;
 				_listener = listener;
 				_context = context;
-				
-				
+			}
+			
+			public void Init(IContext context)
+			{
 				if (_node == null)	
 					OnNewNode(null);
 				else
@@ -75,6 +79,12 @@ namespace Fuse.Reactive
 			{
 				if (source == _node)
 					OnNewNode(value);
+			}
+			
+			protected override void OnLostData(IExpression source)
+			{
+				if (source == _node)
+					_listener.OnLostData(_expr);
 			}
 			
 			void OnNewNode(object obj)
@@ -90,6 +100,7 @@ namespace Fuse.Reactive
 				if (searchNode == null)
 				{
 					Fuse.Diagnostics.UserError( "invalid search node for InstantiatorFunction", this );
+					_listener.OnLostData(_expr);
 					return;
 				}
 				
@@ -97,6 +108,7 @@ namespace Fuse.Reactive
 				if (_instantiator == null)
 				{
 					Fuse.Diagnostics.UserError( "Could not find an Instantiator", this );
+					_listener.OnLostData(_expr);
 					return;
 				}
 				
@@ -108,6 +120,7 @@ namespace Fuse.Reactive
 				{
 					//given that instantiator wasn't null this shouldn't ever really happen
 					Fuse.Diagnostics.InternalError( "Unable to resolve Instantiator node", this );
+					_listener.OnLostData(_expr);
 					return;
 				}
 				
@@ -143,6 +156,8 @@ namespace Fuse.Reactive
 
 				if (q != -1)
 					_listener.OnNewData(_expr, q);
+				else
+					_listener.OnLostData(_expr);
 			}
 			
 			void OnUpdatedWindowItems()

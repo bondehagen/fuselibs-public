@@ -1,29 +1,209 @@
 # Unreleased
 
-## ScrollViewPager
+## Expressions
+- Added support for boolean `==` and `!=` expressions, which can be used for things like negating expressions.
+
+## Let
+
+# 1.6
+
+## 1.6.0
+
+### Let
+- Added specific type version of `Let`, such as `LetFloat` and `LetString`. This improve the ability to connect pieces of the UX together and do animation/transitions in UX without using JavaScript.
+
+### Instantiator
+- Improved the internals of `Instantiator` (the base for `Each` and `Instance`). This also fixed a few corner cases with templates not updating, but should otherwise not affect user code.
+- Fixed the creation of templates in `Each` / `Instance` when the data context is null/non-extant. It will now not instantiate the templates are all. This prevents some kinds of binding defects and improves efficiency with default templates.
+
+### Element
+- Fixed an incorrect cascade of `MinWidth` / `MinHeight`. This could only be noticed in certain scenarios using `BoxSizing="FillAspect"`.
+- Fixed the `width`, `height`, `x`, and `y` functions to support an element losing its layout. They become undefined in this case, thus allowing a syntax like `width(element) ?? 50`
+
+### StackPanel
+- Fixed the invalid propagation of MaxWidth/MaxHeight in a StackPanel to its children
+
+### Data Context
+- Resolved a situation with nested context binding `{}`, such as `With` and `Instance`, where the data would not correctly update
+
+### Selection
+- Fixed the ordering of events so that `SelectionChanged` is emitted after the bound value is updated
+
+### Expressions
+- Deprecated `UnaryOperator.OnNewOperand` and `OnLostOperand`.  These are part of a broken pattern of using unary expressions (and were not present on Binary/Ternary/QuaternaryOperator). You generally shouldn't need this, and should implement `Compute` instead. In the rare cases you need the vrituals you'll need to extend Expression and implement `Subscribe`, using `ExpressionListener` as a way to capture the correct functionality.
+- Moved `VarArgFunction.Argument` to `Expression.Argument`. It's in a base class so still has visibility in `VarArgFunction`.
+- `VarArgFunction.Subscription.OnNewData` and `OnLostData` have been sealed. They should not have been open for overriding before as it conflicts with the inner workings on the class. Only the `OnNewPartialArguments` and `OnNewArguments` should be overridden.
+- Improved error handling on several operators and math functions. Instead of exceptions these should produce the standard conversion/computation warnings for invalid types.
+- Added `size()` function to force conversion to a `Size` or `Size2` type. Useful when dealing with unknown types and some operators that would otherwise result in the undesired conversion.
+
+### Navigation
+- Fixed an issue with `Navigator.Pages` not registering pages correctly in certain initialization orders
+- Added `$navigationRequest` to `Navigation.Pages` objects. This can be used to fine-tune the navigation.
+
+### Instance
+- Added `Instance.Item` to work similar to an `Each` with a single data item
+
+### Expression Functions
+- Added `nonNull` for special evaluation handling for temporary null values. This may be useful in migrating code that is now producing many incompatbile argument warnings.
+- Changed operators / functions to report warnings if they are provided with invalid arguments. This should help locate errors in code that were previously silent and just didn't evaluate, or evaluated wrong.  Consider using the `??` operator, and the `isNull`, `isDefined` and `nonNull` functions to deal with non-data scenarios.
+- Removed `protected` from `BinaryOperator.OnNewOperands`. This was intended to be `internal` as there is no correct way to overload it. If you happened to use it we can provide a different base-class to use for you.
+
+### Fuse.Preview Selection
+- Removed the following APIs, that were never meant to be exposed to user-code:
+  * `Fuse.Visual.DrawLocalSelection(DrawContext, Rect)`
+  * `Fuse.Visual.DrawSelection(DrawContext)`
+  * `Fuse.AppBase.InvalidateSelection()`
+  * `Fuse.App.DrawSelection(DrawContext)`
+  * `Fuse.Preview.SelectionManager`
+  * `Fuse.Preview.ISelection`
+
+### Conversions
+- Added `float()` expression to force conversion to float values
+- Added `string()` expression to force conversion to string values
+
+### Let
+- Introduced an experimental `Let` feature that allows creating expression aliases and local variables in UX
+
+### Timer
+- Fixed issue where creating a repeating `Timer` with 0 delay in JavaScript would not prevent the worker thread to become idle.
+
+### RangeControl
+- `RangeControl.Value` and `RangeControl2D.Value` are not longer clamped to the `Range` of the control. This fixes issues where the `Value` was incorrectly modified when the range and value were both data bound. The user behaviors `LinearRangeBehavior` and `CircularRangeBehavior` will both however clamp to the range -- the user cannot select outside the range.
+
+### Observables and bindings
+- Fixed an issue where missing data was propagated as null. This will affect Observable's that contain zero data, and may have resulted in some bindings showing old/incorrect data.
+
+### Multi-density image sources
+- Fixed an issue where the desired size of a multi-density source ended up as the pixel size of the selected image source. The effect was that images rendered on a high-density screen, would appear larger than on a low density screen.
+
+### Timeline
+- Fixed an issue where `PlayMode="Wrap"` would not loop if the duration was less than 1 second
+
+### Expressions
+- Added `isDefined` to check if a value is known in the context
+- Added `isNull` to check if a value is null or doesn't exist
+
+### Router
+- Added object support to `Router` script functions, such as `goto`, `push`, `bookmark`, etc. This mirrors the upcoming Model ability to use objects as path elements.
+- Added object support to `Modify/Push/GotoRoute` actions.
+- Added `NavigationControl.modifyPath` to the JavaScript interface. This allows extended local path manipulation without using a router.
+
+### TextView
+- Fixed iOS issue where the return key would display "next" instead of "return".
+
+### Navigation
+- `Navigator` blocks input to pages while trasitioning to new pages. To get the old behaviour, where input is not blocked, set `<Navigator BlockInput="Never">`.
+
+### Fuse.Reactive
+- Added `OnLostData` to the `IListener` interface. This is needed to properly deal with changes in context in
+ Preview, Model, and some JavaScript situations.
+- Added `OnLostData` to the `InnerListener` class. Implementations should deal with this scenario.
+- Changed null coalesce `??` to use the default when the left operand doesn't exist, not just when it's null
+
+### Fuse.Marshal
+- `ToDouble` replaced with `TryToDouble` for naming consistency (old names remain as deprecated)
+
+### Fuse.Panel
+- Fixed a bug where `IsFrozen` would ignore `Panel.Opacity`.
+
+### Scripting
+- `Fuse.Scripting`'s `Function` type has a `Call` method, this now takes a `Scripting.Context`. This guarentees that it can only occur on the VM thread.
+- `Fuse.Scripting`'s `Object` type has a `CallMethod` method, this now takes a `Scripting.Context`. This guarentees that it can only occur on the VM thread.
+- IMirror is no longer implemented by ThreadWorker. This functionality has been moved to the context
+- Moved `ArrayMirror`, `ClassInstance`, `ModuleInstance`, `ObjectMirror`, `Observable`, `ObservableProperty`, `RootableScriptModule` & `ThreadWorker` to the `Fuse.Scripting.JavaScript` namespace
+- Removed the `CanEvaluate` method and instead rely on the passing of the `Scripting.Context` to know if we are on the VM thread or not.
+- The 'wrapping' functionality has been moved from the `ThreadWorker` to a standalone static class called `TypeWrapper`. The `IThreadWorker` no longer provides `Wrap` & `UnWrap`
+- `ThreadWorker.ScriptClass` functionality moved to context. We will likely want to factor this out to a helper class however for now the major benefit is that `ThreadWorker` no longer owns these features.
+- Remove the public `Context` property from the `ThreadWorker`. Sadly the context is still available via the internal field so that the tests can work. This will need to be fixed.
+- `Fuse.Reactive` now depends on `Fuse.Scripting` so that it can talk about the `Scripting.Context` in it's provided interfaces.
+- `DateTimeConverterHelpers` moved to its own uno file.
+- `IMirror`'s `Reflect` now takes a `Scripting.Context`
+- IThreadWorker no longer implement IDispatcher
+- `Fuse.Scripting.JavaScript`'s `ThreadWorker` no longer blocks on construction
+- Implemented `console.error`, `console.warn` and `console.info`
+- Improved formatting for the above functions, as well as for `console.log`
+- The `ScriptMethod<T>` contstructor now throws if it's passed `ExecutionThread.MainThread` with Func, instead of failing to run it later on.
+- The `ScriptMethodInline` constructor that takes an `ExecutionThread` as an argument is now obsolete. Use the one without instead. JavaScript needs to run on the JavaScript thread anyway.
+- The `ScriptMethod<T>` contstructor that takes `Func` and `ExecutionThread` as arguments is now obsolete. Use the one without instead.
+- Calling script-methods that doesn't take any arguments should now consistently give an error. This was already the case for many functions. This is intended to ensure user-code is forward-compatible.
+- `ScriptException.ErrorMessage` has been marked as obsolete, use `ScriptException.Message` instead.
+- `ScriptException.Message` no longer includes all details about the script-exception, only the message itself. If you want the extra information, use `ScriptException.ToString()`, or check the specific fields.
+- `Fuse.IScriptException` has been marked as obsolete. This was previously unused.
+- `ScriptException.JSStackTrace` has been marked as obsolete, use `ScriptException.ScriptStackTrace` instead.
+- `ScriptException.SourceLine` has been marked as obsolete, and consistently returns null now. The latter was always the case except for when using V8 before. The same information can be deduced from the project files and FileName + LineNumber fields.
+- `ModuleResult.Object` has been marked as obsolete. Use `ModuleResult.GetObject(Context)` instead.
+- `ModuleResult.Exports` has been marked as obsolete. Use `ModuleResult.GetExports(Context)` instead.
+- `Function.Call`, `Function.Construct`, `Object.InstanceOf` and `Object.CallMethod` now takes a `Context` as their first argument. The old signatures has been marked as obsolete.
+
+
+### JavaScript: JavaScriptCore on Android
+- Added support for JavaScriptCore on Android. Build with `-DUSE_JAVASCRIPTCORE` to enable it on Android. JavaScriptCore is by default enabled on iOS.
+
+
+# 1.4
+
+## 1.4.1
+
+### Expressions
+- Fixed an issue where toUpper and toLower would crash on null intput. Now they propagate null instead.
+
+### DatePicker/TimePicker
+- Fixed an issue where some properties (for example `TimePicker.Is24HourView`) wouldn't work when set from UX.
+- Fixed a documentation issue with `TimePicker` where the code example used the wrong name for the `Is24HourView` property.
+
+## 1.4.0
+
+### Notifications
+- Fix regression causing iOS apps not to be accepted to the Store apparently due to use of push-notifications even though they are not used in the project.
+
+### TextInput
+- Fixed issue on android where placeholder text on a `<TextInput IsPassword="true" />` would be drawn as password dots
+
+### Scripting.Context
+- Invoke now takes an `Action<Scripting.Context>`. This is the first step in refactoring our scripting layer to make sure code does not evaluate JS on the wrong thread
+- The `Observable` property has been removed from Context & IThreadWorker
+
+### Fuse.Reactive.JavaScript
+- Fuse.Reactive.JavaScript has been renamed to Fuse.Scripting.JavaScript & the separate VM packages are now subdirectories of this package
+
+### DesktopApp Updates
+- Fixed an issue about certain event not triggering a proper update and redraw on desktop preview/build
+
+### RangeControl
+- `LinearRangeBehavior` now correctly responds to `UserStep` values, providing quantized input
+- Fixed `RangeControl.RelativeValue` to properly update when bound in UX
+- Allowed `Minimum` to be less than `Maximum` on `RangeControl` making it easier to do left-to-right `100..0` ranges.
+- Fixed a defect in position calculations in `LinearRangeBehavior`. It now uses the immediate Element parent for bounds calculation as opposed to the `RangeControl`.
+- Added `UserStep` support to Android and iOS native Slider
+
+### WebView
+- Exported the methods goBack, goForward, reload and stop for use in FuseJS
+- Fixed regression in 1.3 that broke WebView when using URISchemeHandler
+
+### ScrollViewPager
 - Fixed a NullReferenceError that could happen while using ScrollViewPager in preview
 
-## DatePicker
+### DatePicker
 - Introduced Fuse.Controls.DatePicker class, which wraps native date pickers on Android and iOS. See the `DatePicker` class documentation for more details.
 
-## TimePicker
+### TimePicker
 - Introduced Fuse.Controls.TimePicker class, which wraps native time pickers on Android and iOS. See the `TimePicker` class documentation for more details.
 
-## TextView
+### TextView
 - Fixed bug on Android where setting `TextWrapping="NoWrap"` would force the `TextView` to be single line. New behavior is to instead allow the view to scroll horizontally instead of automatically wrapping the text.
 
-## MultiDensityImageSource
+### MultiDensityImageSource
 - Added native support, meaning it can be used by images inside a `NativeViewHost`.
 
-## Video
+### Video
 - Fixed bug in Video where playback actions, like `Play`, used before the video was initialized would end up getting swallowed.
 - Added some JavaScript methods to `Video` to make it easier to control playback from JavaScript, as well as obtaining information the video duration.
 - Made `Video.Duration` and `Video.Position` property-bindable.
 
-## Fuse.Marshal:
+### Fuse.Marshal:
 - Fixed a bug where UX expressions that produce two component floats did not expand to four compoent floats the same same way as literals did.
 
-## Fuse.Reactive framework changes (Uno-level)
+### Fuse.Reactive framework changes (Uno-level)
 - These are breaking changes, but very unlikely to affect your app:
  * The `DataBinding`, `EventBinding` and `ExpressionBinding` class constructors no longer take a `NameTable` argument.
  * The `Name` and `This` expression classes has been removed. The UX compiler will now compile these as `Constant` expressions that contain the actual objects instead.
@@ -34,8 +214,21 @@
  * The `Fuse.Reactive.IWriteable` interface has changed (breaking!). The method signature is now `bool TrySetExclusive(object)` instead of `void SetExclusive(object)`. Unlikely to affect your code.
  * `IObservable` and `IObservableArray` no longer push their initial value on `Subscribe`.
 
+### Image
+- Image will now respect Exif orientation.
+
 
 # 1.3
+
+## 1.3.2
+
+### Callback
+- Fixed a regression where args.sender was no longer the `ux:Name` of the parent of the trigger.
+
+## 1.3.1
+
+### Navigation
+- Fixed an issue where `PageControl.ActiveIndex` would not update if navigation done with JavaScript `seekToPath` or `Router` interfaces.
 
 ## 1.3.0
 

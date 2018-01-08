@@ -1,15 +1,15 @@
 {
   "Copyright": "Copyright (c) Fusetools AS 2017",
-  "Version": "1.3.0-rc3",
+  "Version": "1.6.1",
   "Package": {
     "ProjectUrl": "https://fusetools.com"
   },
   "Description": "A client for the WebSocket protocol",
   "Publisher": "Fusetools AS",
-  "Packages": [
-    "Fuse.Common",
-    "Fuse.Scripting",
-    "Fuse.Reactive"
+  "Projects": [
+    "../Fuse.Common/Fuse.Common.unoproj",
+    "../Fuse.Scripting/Fuse.Scripting.unoproj",
+    "../Fuse.Reactive/Fuse.Reactive.unoproj"
   ],
   "Includes": [
     "WebSocketClient.uno",

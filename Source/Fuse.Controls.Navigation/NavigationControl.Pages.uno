@@ -13,6 +13,12 @@ namespace Fuse.Controls
 			It should be bound to a JavaScript observable array. The highest index page will always be the active page for the control. As pages are added/removed from this array the navigation state will change.
 			
 			The items in the array are objects, either explicitly created or via the Model feature. They should contain the the `$path` property which specifies the path to use. The object itself will be added to the data context for the page, allowing lookups from within the object.
+			
+			The `$navigationRequest` property may be used to fine-tune how transitions to the pages performed. Without this property the control will infer the type of transition based on how the array has been modified. The properties are a subset of those offered by `modifyPath`:
+			
+				- `transition`: Either `Bypass` or `Transition`
+				- `style`: The style of the operation, which can be used as a matching criteria in transitions.
+				- `operation`: `Pop`, `Replace`, `Push` or `Goto`
 		*/
 		public IArray PageHistory
 		{
@@ -20,22 +26,25 @@ namespace Fuse.Controls
 			set
 			{
 				_pageHistory = value;
-				OnPageHistoryChanged();
+				if (IsRootingCompleted)
+				{
+					OnPageHistoryChanged();
+					FullUpdatePages(UpdateFlags.ForceGoto | UpdateFlags.Bypass);
+				}
 			}
 		}
 		
 		int _curPageIndex = -1;
 		void OnPageHistoryChanged()
 		{
-			if (AncestorRouterPage == null || !IsRootingStarted)
+			if (AncestorRouterPage == null)
 				return;
 				
 			AncestorRouterPage.ChildRouterPages.Detach();
 			
 			if (_pageHistory == null)
 				return;
-			
-			var obs = _pageHistory as IObservable;
+			var obs = _pageHistory as IObservableArray;
 			if (obs != null)
 			{
 				AncestorRouterPage.ChildRouterPages.Attach( obs, this );
@@ -46,7 +55,6 @@ namespace Fuse.Controls
 			}
 				
 			_curPageIndex = -1;
-			FullUpdatePages(UpdateFlags.ForceGoto);
 		}
 		
 		void OnPageHistoryUnrooted()
@@ -62,74 +70,61 @@ namespace Fuse.Controls
 			ForceGoto = 1 << 0,
 			Add = 1 << 1,
 			Replace = 1 << 2,
-		}
-		
-		protected string GetObjectPath( object data )
-		{
-			string path = null;
-			var obj = data as IObject;
-			if (obj != null && obj.ContainsKey("$template")) //set implicitly by Model API
-				path = Marshal.ToType<string>(obj["$template"]);
-			if (obj != null && obj.ContainsKey("$path"))
-				path = Marshal.ToType<string>(obj["$path"]);
-				
-			return path;
+			Bypass = 1 << 3,
 		}
 
+		/*
+			By the time this is called the backing ChildRouterPages map will already have the object, mapped with the path and context. 
+		*/
 		void FullUpdatePages(UpdateFlags flags = UpdateFlags.None)
 		{
-			string path = null, param = null;
 			int pageNdx = _pageHistory.Length - 1;
-			object data = null;
-			if (pageNdx >= 0)
-			{
-				data = _pageHistory[pageNdx];
-					
-				path = GetObjectPath( data );
-				//null is an erorr, but we can process it nonetheless (will go to no page)
-				if (path == null)
-					Fuse.Diagnostics.UserError( "Model is missing a $template or $page property", this);
-					
-				//perhaps this is good enough to distinguish different objects from being recognized
-				//as the same page
-				param = "" + data.GetHashCode();
-			}
 				
-			var op = pageNdx < _curPageIndex ? RoutingOperation.Pop :
+			var rr = new RouterRequest();
+			rr.Operation = pageNdx < _curPageIndex ? RoutingOperation.Pop :
 				pageNdx == _curPageIndex ? RoutingOperation.Replace :
 				pageNdx > 0 ? RoutingOperation.Push : 
 				RoutingOperation.Goto;
 			if (flags.HasFlag(UpdateFlags.ForceGoto))
-				op = RoutingOperation.Goto;
+				rr.Operation = RoutingOperation.Goto;
 			else if (flags.HasFlag(UpdateFlags.Add))
-				op = pageNdx > 0 ? RoutingOperation.Push : RoutingOperation.Goto;
+				rr.Operation = pageNdx > 0 ? RoutingOperation.Push : RoutingOperation.Goto;
 			else if (flags.HasFlag(UpdateFlags.Replace))
-				op = RoutingOperation.Replace;
+				rr.Operation = RoutingOperation.Replace;
 				
-			var trans = NavigationGotoMode.Transition;
+			rr.Transition = flags.HasFlag(UpdateFlags.Bypass) ? NavigationGotoMode.Bypass : NavigationGotoMode.Transition;
 			
 			RouterPage rPage;
 			if (pageNdx >= AncestorRouterPage.ChildRouterPages.Count)
 			{
-				rPage = new RouterPage{ Path = path, Parameter = param, Context = data };
+				rPage = RouterPage.CreateDefault();
 				Fuse.Diagnostics.InternalError( "Inconsistent navigation history", this );
 			}
 			else if (pageNdx >= 0)
 			{
+				//this is expected, since the PagesMap will do the mapping
 				rPage = AncestorRouterPage.ChildRouterPages[pageNdx];
-				rPage.Path = path;
-				rPage.Parameter = param;
-				rPage.Context = data;
 			}
 			else
 			{
 				//having no page is inconsistent but must be dealt with since it can happen temporarily while binding
-				rPage = new RouterPage();
+				rPage = RouterPage.CreateDefault();
 			}
 			
-			(this as IRouterOutlet).Goto( rPage, trans, op, "" );
-			if (rPage.Visual != null)
-				PageData.GetOrCreate(rPage.Visual).SetContext(data);
+			//adapt request
+			IObject navRequest = RouterPage.GetNavigationRequest( rPage.Context );
+			if (navRequest != null)
+			{
+				if (!rr.AddArguments(navRequest, RouterRequest.Fields.Transition | 	
+					RouterRequest.Fields.Style | RouterRequest.Fields.Operation))
+				{
+					Fuse.Diagnostics.UserError( "Invalid $navigationRequest, visual result may not match expectation", this );
+					//continue anyway since the resulting state is still valid
+				}
+			}
+			
+			Visual ignore;
+			((IRouterOutlet)this).Goto( rPage, rr.Transition, rr.Operation, rr.Style, out ignore );
 			
 			_curPageIndex = pageNdx;
 		}

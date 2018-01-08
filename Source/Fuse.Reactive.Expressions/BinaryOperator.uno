@@ -4,112 +4,45 @@ using Uno.Collections;
 
 namespace Fuse.Reactive
 {
-	/** Optimized base class for reactive functions/operators that take a two arguments/operands. 
-
-		Subclasses must override etiher `Compute` for pure/synchronous functions, or `OnNewOperands` to 
-		allow more advanced control over when the listener is notified.
-	*/
-	public abstract class BinaryOperator: Expression
+	/** Base class for reactive functions/operators that take two arguments/operands. */
+	public abstract class BinaryOperator: ComputeExpression
 	{
-		public Expression Left { get; private set; }
-		public Expression Right { get; private set; }
-		protected BinaryOperator(Expression left, Expression right)
-		{
-			Left = left;
-			Right = right;
-		}
+		public Expression Left { get { return GetArgument(0); } }
+		public Expression Right { get { return GetArgument(1); } }
+		
+		protected BinaryOperator(Expression left, Expression right, 
+			Flags flags = Flags.DeprecatedVirtualFlags)
+			: base( new Expression[]{ left, right}, flags )
+		{ }
 
-		public override IDisposable Subscribe(IContext context, IListener listener)
+		protected BinaryOperator(Expression left, Expression right, 
+			string name, Flags flags = Flags.None)
+			: base( new Expression[]{ left, right}, flags, name )
+		{ }
+		
+		internal override Flags GetFlags()
 		{
-			return Subscription.Create(this, context, listener);
+			return Flags.None |
+				(IsLeftOptional ? Flags.Optional0 : Flags.None) |
+				(IsRightOptional ? Flags.Optional1 : Flags.None);
 		}
-
+		
 		protected virtual bool IsLeftOptional { get { return false; } }
 		protected virtual bool IsRightOptional { get { return false; } }
 
-		protected virtual object Compute(object left, object right)
+		protected virtual bool TryCompute(object left, object right, out object result)
 		{
-			throw new Exception(GetType().FullName + " does not implement the required methods");
+			Fuse.Diagnostics.Deprecated( " No `TryCompute`, or a deprecated form, overriden. Migrate your code to override the one with `bool` return. ", this );
+			result = Compute(left, right);
+			return true;
 		}
+		
+		/** @deprecated Override the `TryCompute` function. 2017-11-29 */
+		protected virtual object Compute(object left, object right) { return null; }
 
-		protected virtual void OnNewOperands(IListener listener, object left, object right)
+		protected override sealed bool TryCompute(Argument[] args, out object result)
 		{
-			listener.OnNewData(this, Compute(left, right));
-		}
-
-		class Subscription: InnerListener
-		{
-			readonly BinaryOperator _bo;
-			object _left, _right;
-
-			IDisposable _leftSub;
-			IDisposable _rightSub;
-
-			IListener _listener;
-			bool _hasLeft;
-			bool _hasRight;
-
-			protected Subscription(BinaryOperator bo, IListener listener)
-			{
-				_bo = bo;
-				_listener = listener;
-			}
-
-			public static Subscription Create(BinaryOperator bo, IContext context, IListener listener)
-			{
-				var res = new Subscription(bo, listener);
-				res.Init(context);
-				return res;
-			}
-			
-			/** Must be called by subclasses at the end of constructor, or when fully initialized.
-				This avoids race condition if subscriptions call back synchronously. */
-			protected void Init(IContext context)
-			{
-				_leftSub = _bo.Left.Subscribe(context, this);
-				_rightSub = _bo.Right.Subscribe(context, this);
-			}
-
-			protected override void OnNewData(IExpression source, object value)
-			{
-				if (source == _bo.Left) { _hasLeft = true; _left = value; }
-				if (source == _bo.Right) { _hasRight = true; _right = value; }
-
-				if ((_hasLeft || _bo.IsLeftOptional) && (_hasRight || _bo.IsRightOptional))
-					OnNewOperands(_left, _right);
-			}
-
-			protected virtual void OnNewOperands(object left, object right)
-			{
-				ClearDiagnostic();
-
-				try
-				{
-					_bo.OnNewOperands(_listener, left, right);
-				}
-				catch (MarshalException me)
-				{
-					SetDiagnostic(me.Message, _bo);
-				}
-			}
-
-			public override void Dispose()
-			{
-				base.Dispose();
-
-				if (_leftSub != null)
-				{
-					_leftSub.Dispose();
-					_leftSub = null;
-				}
-				if (_rightSub != null)
-				{
-					_rightSub.Dispose();
-					_rightSub = null;
-				}
-				_listener = null;
-			}
+			return TryCompute(args[0].Value, args[1].Value, out result);
 		}
 	}
 }
-

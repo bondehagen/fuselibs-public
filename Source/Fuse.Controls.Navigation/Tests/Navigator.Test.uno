@@ -376,7 +376,7 @@ namespace Fuse.Navigation.Test
 		}
 		
 		[Test]
-		public void SwipeBack()
+		public void SwipeBackBasic()
 		{
 			var p = new UX.Navigator.SwipeBack();
 			using (var root = TestRootPanel.CreateWithChild(p,int2(1000)))
@@ -386,9 +386,13 @@ namespace Fuse.Navigation.Test
 				root.StepFrame(5); //stabilize navigator animations
 				
 				//don't swipe far enough
+				Assert.AreEqual( NavigationState.Stable, ((INavigation)p.Nav).State );
 				var two = p.Nav.Active;
 				root.PointerSwipe(float2(100,100), float2(150,100), 50); //too slow to trigger velocity
+				//it's debatable that perhaps an incomplete swipe should change to "Transition" mode instead
+				Assert.AreEqual( NavigationState.Seek, ((INavigation)p.Nav).State );
 				root.StepFrame(5);
+				Assert.AreEqual( NavigationState.Stable, ((INavigation)p.Nav).State );
 
 				Assert.AreEqual(two, p.Nav.Active);
 				Assert.AreEqual(1, p.R.TestHistoryCount);
@@ -538,7 +542,9 @@ namespace Fuse.Navigation.Test
 			{
 				Assert.AreEqual(p.one, p.Nav.Active);
 				
+				Assert.AreEqual( NavigationState.Stable, ((INavigation)p.Nav).State );
 				p.R.Push( new Route("two") );
+				Assert.AreEqual( NavigationState.Transition, ((INavigation)p.Nav).State );
 				root.PumpDeferred();
 				
 				Assert.AreEqual(p.one, p.Nav.Active); //this need not be guaranteed I think
@@ -551,9 +557,13 @@ namespace Fuse.Navigation.Test
 				root.PumpDeferred();
 				Assert.AreEqual(p.two, p.Nav.Active);
 				Assert.AreEqual(TriggerPlayState.Backward, p.T.PlayState);
+				Assert.AreEqual( NavigationState.Transition, ((INavigation)p.Nav).State );
 				
 				root.StepFrame(0.5f);
 				Assert.AreEqual(0.5f,TriggerProgress(p.T));
+				
+				root.StepFrame(1f);
+				Assert.AreEqual( NavigationState.Stable, ((INavigation)p.Nav).State );
 			}
 		}
 		
@@ -564,14 +574,20 @@ namespace Fuse.Navigation.Test
 			var p = new UX.Navigator.ForceDefer();
 			using (var root = TestRootPanel.CreateWithChild(p))
 			{
+				Assert.AreEqual( NavigationState.Stable, ((INavigation)p.Nav).State );
 				p.R.Push( new Route("two") );
+				Assert.AreEqual( NavigationState.Transition, ((INavigation)p.Nav).State );
 				p.R.Push( new Route("three") );
+				Assert.AreEqual( NavigationState.Transition, ((INavigation)p.Nav).State );
 				root.StepFrameJS();
 				Assert.AreEqual("yes", p.one.Title);
 				//there's no guarantee of Activate/Deactived being called anymore in this situation.
 				//we don't have a good way to test the forced change
 				//Assert.AreEqual("yes", p.two.Title);
 				Assert.AreEqual("yes", p.three.Title);
+				
+				root.StepFrame(5);
+				Assert.AreEqual( NavigationState.Stable, ((INavigation)p.Nav).State );
 			}
 		}
 		
@@ -584,12 +600,15 @@ namespace Fuse.Navigation.Test
 			{
 				var p1 = p.Nav.Active;
 				
+				Assert.AreEqual( NavigationState.Stable, ((INavigation)p.Nav).State );
 				//use internal interface for simplicity/directness in test.
 				p.R.Modify( ModifyRouteHow.PreparePush, 
 					new Route( "one", "1" ), NavigationGotoMode.Transition, "" );
+				Assert.AreEqual( NavigationState.Seek, ((INavigation)p.Nav).State );
 				p.R.PrepareProgress = 0.5;
-				p.R.Modify( ModifyRouteHow.FinishPrepared, null, NavigationGotoMode.Transition, "" );
+				p.R.Modify( ModifyRouteHow.FinishPrepared, (Route)null, NavigationGotoMode.Transition, "" );
 				root.PumpDeferred();
+				Assert.AreEqual( NavigationState.Transition, ((INavigation)p.Nav).State );
 				
 				var p2 = p.Nav.Active;
 				Assert.IsFalse( p1 == p2 );
@@ -598,13 +617,16 @@ namespace Fuse.Navigation.Test
 				p.R.Modify( ModifyRouteHow.PreparePush, 
 					new Route( "one", "2" ), NavigationGotoMode.Transition, "" );
 				p.R.PrepareProgress = 0.5;
-				p.R.Modify( ModifyRouteHow.FinishPrepared, null, NavigationGotoMode.Transition, "" );
+				p.R.Modify( ModifyRouteHow.FinishPrepared, (Route)null, NavigationGotoMode.Transition, "" );
 				root.PumpDeferred();
 				
 				var p3 = p.Nav.Active;
 				Assert.IsFalse(p2 == p3); //first fix ensured only this bit...
 				Assert.IsTrue( p1 == p3 ); //not this
 				Assert.AreEqual( "2", p3.Parameter );
+				
+				root.StepFrame(5); //stabilize
+				Assert.AreEqual( NavigationState.Stable, ((INavigation)p.Nav).State );
 			}
 		}
 		
@@ -626,6 +648,35 @@ namespace Fuse.Navigation.Test
 		}
 		
 		[Test]
+		public void HitTest()
+		{
+			var p = new UX.Navigator.HitTest();
+			var initMode = HitTestMode.LocalVisualAndChildren;
+			Assert.AreEqual( initMode, p.nav.HitTestMode );
+			using (var root = TestRootPanel.CreateWithChild(p))
+			{
+				for (int i=0; i < 3; ++i)
+				{
+					p.r.Push( new Route( "one", "1" + i ) );
+					root.PumpDeferred();
+					Assert.AreEqual( HitTestMode.LocalBounds, p.nav.HitTestMode );
+					root.StepFrame(5); //stabilize
+					Assert.AreEqual( initMode, p.nav.HitTestMode );
+					
+					p.nav.BlockInput = NavigationControlBlockInput.Never;
+					p.r.Push( new Route( "two", "2" + i) );
+					root.PumpDeferred();
+					Assert.AreEqual( initMode, p.nav.HitTestMode );
+					root.StepFrame(5);
+					Assert.AreEqual( initMode, p.nav.HitTestMode );
+					
+					p.nav.BlockInput = NavigationControlBlockInput.WhileNavigating;
+					root.PumpDeferred();
+				}
+			}
+		}
+		
+		[Test]
 		public void Pages()
 		{
 			var p = new UX.Navigator.Pages();
@@ -635,13 +686,14 @@ namespace Fuse.Navigation.Test
 			{
 				root.StepFrameJS();
 				Assert.AreEqual( "one", _lastPage.Path );
-				Assert.AreEqual( NavigationGotoMode.Transition, _lastGotoMode );
+				Assert.AreEqual( NavigationGotoMode.Bypass, _lastGotoMode );
 				Assert.AreEqual( RoutingOperation.Goto, _lastOperation );
 				Assert.AreEqual( "dog", p.one.v.Value );
 				
 				p.callPushTwo.Perform();
 				root.StepFrameJS();
 				Assert.AreEqual( "two", _lastPage.Path );
+				Assert.AreEqual( NavigationGotoMode.Transition, _lastGotoMode );
 				Assert.AreEqual( RoutingOperation.Push, _lastOperation );
 				Assert.AreEqual( "cat", p.two.v.Value );
 				
@@ -674,7 +726,7 @@ namespace Fuse.Navigation.Test
 			{
 				root.StepFrameJS();
 				Assert.AreEqual( "two", _lastPage.Path );
-				Assert.AreEqual( NavigationGotoMode.Transition, _lastGotoMode );
+				Assert.AreEqual( NavigationGotoMode.Bypass, _lastGotoMode );
 				Assert.AreEqual( RoutingOperation.Goto, _lastOperation );
 				
 				ResetInterceptGoto();
@@ -687,6 +739,101 @@ namespace Fuse.Navigation.Test
 				//Assert.AreEqual( RoutingResult.NoChange, _lastResult );
 				
 				//thus not much point in testing more now since you can't have inert changes :(
+			}
+		}
+		
+		[Test]
+		public void PagesBypass()
+		{
+			var p = new UX.Navigator.PagesBypass();
+			p.theNav._testInterceptGoto = TestInterceptGoto;
+			ResetInterceptGoto();
+			using (var root = TestRootPanel.CreateWithChild(p))
+			{
+				root.StepFrameJS();
+				Assert.AreEqual( "one", _lastPage.Path );
+				Assert.AreEqual( NavigationGotoMode.Bypass, _lastGotoMode );
+				Assert.AreEqual( RoutingOperation.Goto, _lastOperation );
+			}
+		}
+		
+		[Test]
+		public void ModifyPath()
+		{
+			var p = new UX.Navigator.ModifyPath();
+			p.nav._testInterceptGoto = TestInterceptGoto;
+			ResetInterceptGoto();
+			using (var root = TestRootPanel.CreateWithChild(p))
+			{
+				root.StepFrameJS();
+				
+				var rootPage = p.nav.AncestorRouterPage;
+				
+				p.gotoOne.Perform();
+				root.StepFrameJS();
+				Assert.AreEqual( "1.5", GetRecursiveText(p.nav.Active));
+				Assert.AreEqual( "one", _lastPage.Path );
+				Assert.AreEqual( NavigationGotoMode.Transition, _lastGotoMode );
+				Assert.AreEqual( RoutingOperation.Goto, _lastOperation );
+				Assert.AreEqual( 1, rootPage.ChildRouterPages.Count );
+				Assert.AreEqual( _lastPage, rootPage.ChildRouterPages[0] );
+				
+				p.pushTwo.Perform();
+				root.StepFrameJS();
+				Assert.AreEqual( "2.6", GetRecursiveText(p.nav.Active));
+				Assert.AreEqual( "two", _lastPage.Path );
+				Assert.AreEqual( NavigationGotoMode.Bypass, _lastGotoMode );
+				Assert.AreEqual( RoutingOperation.Push, _lastOperation );
+				Assert.AreEqual( 2, rootPage.ChildRouterPages.Count );
+				Assert.AreEqual( _lastPage, rootPage.ChildRouterPages[1] );
+				
+				p.replaceThree.Perform();
+				root.StepFrameJS();
+				Assert.AreEqual( "3.7", GetRecursiveText(p.nav.Active));
+				Assert.AreEqual( "three", _lastPage.Path );
+				Assert.AreEqual( NavigationGotoMode.Transition, _lastGotoMode );
+				Assert.AreEqual( "quick", _lastOperationStyle );
+				Assert.AreEqual( RoutingOperation.Replace, _lastOperation );
+				Assert.AreEqual( 2, rootPage.ChildRouterPages.Count );
+				Assert.AreEqual( _lastPage, rootPage.ChildRouterPages[1] );
+				
+				p.goBack.Perform();
+				root.StepFrameJS();
+				Assert.AreEqual( "1.5", GetRecursiveText(p.nav.Active));
+				Assert.AreEqual( "one", _lastPage.Path );
+				Assert.AreEqual( NavigationGotoMode.Transition, _lastGotoMode );
+				Assert.AreEqual( RoutingOperation.Pop, _lastOperation );
+				Assert.AreEqual( 1, rootPage.ChildRouterPages.Count );
+				Assert.AreEqual( _lastPage, rootPage.ChildRouterPages[0] );
+				
+				//override back page, and check a few safety special conditions
+				p.goBackTwo.Perform();
+				root.StepFrameJS();
+				Assert.AreEqual( "2.8", GetRecursiveText(p.nav.Active));
+				Assert.AreEqual( "two", _lastPage.Path );
+				Assert.AreEqual( NavigationGotoMode.Transition, _lastGotoMode );
+				Assert.AreEqual( RoutingOperation.Pop, _lastOperation );
+				Assert.AreEqual( 1, rootPage.ChildRouterPages.Count );
+				Assert.AreEqual( _lastPage, rootPage.ChildRouterPages[0] );
+			}
+		}
+		
+		[Test]
+		public void NavigationRequest()
+		{
+			var p = new UX.Navigator.PagesNavigationRequest();
+			p.nav._testInterceptGoto = TestInterceptGoto;
+			ResetInterceptGoto();
+			using (var root = TestRootPanel.CreateWithChild(p))
+			{
+				root.StepFrameJS();
+				
+				p.callNext.Perform();
+				root.StepFrameJS();
+				Assert.AreEqual( "three", _lastPage.Path );
+				Assert.AreEqual( NavigationGotoMode.Bypass, _lastGotoMode );
+				Assert.AreEqual( RoutingOperation.Pop, _lastOperation );
+				Assert.AreEqual( "flashy", _lastOperationStyle );
 			}
 		}
 		

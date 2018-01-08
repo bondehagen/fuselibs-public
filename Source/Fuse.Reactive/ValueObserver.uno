@@ -15,6 +15,16 @@ namespace Fuse.Reactive
 
 		public IObservable Observable { get { return _obs; } }
 
+		protected object Value
+		{
+			get 
+			{ 
+				if (_obs == null) return null;
+				if (_obs.Length == 0) return null;
+				return _obs[0];
+			}
+		}
+
 		/** Calling this method will push the current `value[0]` if available, and then
 			subscribe to changes.
 		*/
@@ -25,6 +35,12 @@ namespace Fuse.Reactive
 			_obsSub = obs.Subscribe(this);
 		}
 
+		protected void SubscribeNoPush(IObservable obs)
+		{
+			_obs = obs;
+			_obsSub = obs.Subscribe(this);
+		}
+		
 		protected void Unsubscribe()
 		{
 			if (_obsSub != null) _obsSub.Dispose();
@@ -38,10 +54,11 @@ namespace Fuse.Reactive
 		}
 
 		protected abstract void PushData(object newValue);
+		protected abstract void LostData();
 		
 		void IObserver.OnClear()
 		{
-			PushData(null);
+			LostData();
 		}
 
 		void IObserver.OnSet(object newValue)
@@ -61,19 +78,23 @@ namespace Fuse.Reactive
 
 		void IObserver.OnFailed(string message)
 		{
-			
+			LostData();
 		}
 
 		void IObserver.OnNewAll(IArray values)
 		{
 			if (values.Length > 0)
 				PushData(_obs[0]);
+			else
+				LostData();
 		}
 
 		void IObserver.OnRemoveAt(int index)
 		{
 			if (_obs.Length > 0)
 				PushData(_obs[0]);
+			else
+				LostData();
 		}
 
 		void IObserver.OnInsertAt(int index, object value)
@@ -84,7 +105,11 @@ namespace Fuse.Reactive
 
 	class ValueForwarder: ValueObserver
 	{
-		public interface IValueListener { void NewValue(object value); }
+		public interface IValueListener 
+		{ 
+			void NewValue(object value); 
+			void LostValue();
+		}
 
 		IValueListener _listener;
 		public ValueForwarder(IObservable obs, IValueListener listener)
@@ -96,6 +121,10 @@ namespace Fuse.Reactive
 		protected override void PushData(object newValue)
 		{
 			_listener.NewValue(newValue);
+		}
+		protected override void LostData()
+		{
+			_listener.LostValue();
 		}
 	}
 }

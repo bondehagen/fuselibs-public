@@ -126,6 +126,7 @@
 			<ColumnsReload/>
 			<TextInputActionPage/>
 			<VideoPage/>
+			<ExifPage/>
 			<CameraPage/>
 			<SharingPage/>
 			<UserEventsPage/>
@@ -141,6 +142,8 @@
 			<Launchers/>
 			<Multitouch />
 			<ScrollViewPagerPage/>
+			<UpdatePage/>
+			<FrozenPanelPage/>
 			<Android>
 				<WebViewPage/>
 				<DatePickerPage/>

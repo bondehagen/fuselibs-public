@@ -10,7 +10,7 @@ namespace Fuse.Triggers
 		static Scrolled()
 		{
 			ScriptClass.Register(typeof(Scrolled),
-				new ScriptMethod<Scrolled>("check", check, ExecutionThread.MainThread));
+				new ScriptMethod<Scrolled>("check", check));
 		}
 		
 		/**
@@ -20,14 +20,8 @@ namespace Fuse.Triggers
 			
 			@scriptmethod check()
 		*/
-		static void check(Context c, Scrolled s, object[] args)
+		static void check(Scrolled s)
 		{
-			if (args.Length != 0)
-			{
-				Fuse.Diagnostics.UserError( "check takes no parameters", s );
-				return;
-			}
-			
 			//defer to after main layout to allow added/removed items to have an influence
 			UpdateManager.AddDeferredAction(s.Check, UpdateStage.Layout, LayoutPriority.Post);
 		}

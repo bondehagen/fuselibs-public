@@ -1,0 +1,3 @@
+if DOTNET && HOST_WINDOWS {
+/* 0.00MB */ DotNet: "https://files.fusetools.com/tooling/t3gBQQmBwoYG-V8-DotNet.zip"
+}

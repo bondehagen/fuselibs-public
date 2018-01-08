@@ -1,4 +1,5 @@
 using Uno;
+using Uno.UX;
 
 using Fuse;
 using Fuse.Controls;
@@ -12,32 +13,91 @@ namespace FuseTest
 	*/
 	public class DudElement : Element
 	{
-		public float Value { get; set; }
-		
-		public string StringValue { get; set; }
+		//only one backing value to prevent tests from seeing different values
+		object _value;
 
-		public IArray ArrayValue { get; set; }
+		// avoid using this one now, use `FloatValue` for clarity
+		public float Value 
+		{ 
+			get { return (float)_value; }
+			set { _value = value; }
+		}
 		
-		public object ObjectValue { get; set; }
+		public float FloatValue
+		{
+			get { return (float)_value; }
+			set { _value = value; }
+		}
 		
-		public IExpression Expression { get; set; }
+		public float2 Float2Value
+		{
+			get { return (float2)_value; }
+			set { _value = value; }
+		}
 		
-		public IObject IObjectValue { get; set; }
+		public float3 Float3Value
+		{
+			get { return (float3)_value; }
+			set { _value = value; }
+		}
+		
+		public float4 Float4Value
+		{
+			get { return (float4)_value; }
+			set { _value = value; }
+		}
+		
+		public string StringValue 
+		{ 
+			get { return (string)_value; }
+			set { _value = value; }
+		}
+
+		public IArray ArrayValue
+		{ 
+			get { return (IArray)_value; }
+			set { _value = value; }
+		}
+		
+		public object ObjectValue
+		{ 
+			get { return _value; }
+			set { _value = value; }
+		}
+		
+		public IExpression Expression
+		{ 
+			get { return (IExpression)_value; }
+			set { _value = value; }
+		}
+		
+		public IObject IObjectValue
+		{ 
+			get { return (IObject)_value; }
+			set { _value = value; }
+		}
+		
+		public bool BoolValue
+		{
+			get { return (bool)_value; }
+			set { _value = value; }
+		}
+		
+		public Size SizeValue
+		{
+			get { return (Size)_value; }
+			set { _value = value; }
+		}
+		
+		public Size2 Size2Value
+		{
+			get { return (Size2)_value; }
+			set { _value = value; }
+		}
 		
 		public object UseValue 
 		{
-			get
-			{
-				if (StringValue != null)
-					return StringValue;
-				if (ArrayValue != null)
-					return ArrayValue;
-				if (ObjectValue != null)
-					return ObjectValue;
-				if (IObjectValue != null)
-					return IObjectValue;
-				return Value;
-			}
+			get { return _value; }
 		}
 		
 		protected override float2 GetContentSize( LayoutParams lp )

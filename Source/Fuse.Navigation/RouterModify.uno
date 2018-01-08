@@ -189,8 +189,8 @@ namespace Fuse.Navigation
 		
 			try
 			{
-				Route route = null;
-				if (!RouterRequest.ParseNVPRoute(value, out route))
+				RouterPageRoute route = null;
+				if (!RouterRequest.ParseUXRoute(value, out route))
 					return;
 				
 				PerformRoute( (_pathSub as IContext).Node, route);
@@ -200,8 +200,13 @@ namespace Fuse.Navigation
 				DisposePathSub();
 			}
 		}
+		
+		void IListener.OnLostData(IExpression source)
+		{
+			//unexpected/ignorable as listening is one-off
+		}
 			
-		void PerformRoute(Node n, Route route)
+		void PerformRoute(Node n, RouterPageRoute route)
 		{
 			_request.Route = route;
 			

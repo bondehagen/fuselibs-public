@@ -1,24 +1,16 @@
 using Uno.Compiler.ExportTargetInterop;
+using Uno;
 
 namespace WebSocketSharp
 {
-	[DotNetType("System.EventHandler")]
-	extern(CIL) public class EventArgs {}
-
-	[DotNetType("System.EventHandler")]
-	extern(CIL) public delegate void EventHandler(object sender, EventArgs e);
-
-	[DotNetType("System.EventHandler`1")]
-	extern(CIL) public delegate void EventHandler<TEventArgs>(object sender, TEventArgs e);
-
 	[DotNetType("WebSocketSharp.ErrorEventArgs")]
-	extern(CIL) public class ErrorEventArgs
+	extern(DOTNET) public class ErrorEventArgs
 	{
 		public extern Uno.Exception Exception { get; private set; }
 	}
 
 	[DotNetType("WebSocketSharp.MessageEventArgs")]
-	extern(CIL) public class MessageEventArgs : EventArgs
+	extern(DOTNET) public class MessageEventArgs : EventArgs
 	{
 		public extern string Data { get; }
 		public extern bool IsBinary { get; }
@@ -28,15 +20,15 @@ namespace WebSocketSharp
 	}
 
 	[DotNetType("WebSocketSharp.CloseEventArgs")]
-	extern(CIL) public class CloseEventArgs : EventArgs
+	extern(DOTNET) public class CloseEventArgs : EventArgs
 	{}
 
 	[DotNetType("System.Security.Cryptography.X509Certificates.X509CertificateCollection")]
-	extern(CIL) public class X509CertificateCollection
+	extern(DOTNET) public class X509CertificateCollection
 	{}
 
 	[DotNetType("System.Security.Authentication.SslProtocols")]
-	extern(CIL) public enum SslProtocols
+	extern(DOTNET) public enum SslProtocols
 	{
 		None = 0,
 		Ssl2 = 12,
@@ -49,7 +41,7 @@ namespace WebSocketSharp
 	}
 
 	[DotNetType("WebSocketSharp.Net.ClientSslConfiguration")]
-	extern(CIL) public class ClientSslConfiguration
+	extern(DOTNET) public class ClientSslConfiguration
 	{
 		public extern ClientSslConfiguration (
 			  string targetHost,
@@ -59,14 +51,14 @@ namespace WebSocketSharp
 	}
 
 	[DotNetType("System.Uri")]
-	extern(CIL) public class Uri
+	extern(DOTNET) public class Uri
 	{
 		public extern Uri(string uriString);
 		public extern string Host { get; }
 	}
 
 	[DotNetType("WebSocketSharp.WebSocket")]
-	extern(CIL) public class WebSocket : Uno.IDisposable
+	extern(DOTNET) public class WebSocket : Uno.IDisposable
 	{
 		public extern ClientSslConfiguration SslConfiguration { get; set; }
 		public extern void ConnectAsync();

@@ -10,7 +10,7 @@ namespace Fuse.Triggers
 		static Completed()
 		{
 			ScriptClass.Register(typeof(Completed),
-				new ScriptMethod<Completed>("reset", reset, ExecutionThread.MainThread)
+				new ScriptMethod<Completed>("reset", reset)
 			);
 		}
 		
@@ -21,14 +21,8 @@ namespace Fuse.Triggers
 			
 			@scriptmethod reset()
 		*/
-		static void reset(Context c, Completed cp, object[] args)
+		static void reset(Completed cp)
 		{
-			if (args.Length != 0)
-			{
-				Fuse.Diagnostics.UserError( "Completed.reset takes no arguments", cp );
-				return;
-			}
-			
 			cp.Reset();
 		}
 	}

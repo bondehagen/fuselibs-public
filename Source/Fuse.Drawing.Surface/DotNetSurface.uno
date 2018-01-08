@@ -32,7 +32,7 @@ namespace Fuse.Drawing
 		This also keeps the API minimal. There are no convenience functions in this class. Those are provided via higher-level classes, such as `LineSegments` or `SurfaceUtil`.
 	*/
 	
-	[Require("Assembly", "System.Drawing.dll")]
+	[Require("Assembly", "System.Drawing")]
 	[extern(DOTNET) Require("Source.Include","XliPlatform/GL.h")]
 	extern(DOTNET)
 	internal class DotNetSurface : Surface
@@ -476,7 +476,7 @@ namespace Fuse.Drawing
 			//TODO: this is not entirely correct since _drawContext could be null now -- but it isn't
 			//in any of our use cases, but the contract certainly allows for it
 			_drawContext.PushRenderTarget(fb);
-			DrawImageFill(tex);
+			Blitter.Singleton.Blit(tex, new Rect(float2(-1), float2(2)), float4x4.Identity, 1.0f, true);
 			var imageRef = LoadImage(src.PixelSize.X, src.PixelSize.Y );
 			FramebufferPool.Release(fb);
 			_drawContext.PopRenderTarget();
@@ -503,30 +503,11 @@ namespace Fuse.Drawing
 			}
 
 			var handle = GCHandle.Alloc(pixelData, GCHandleType.Pinned);
-			IntPtr buffer =  Marshal.UnsafeAddrOfPinnedArrayElement((CilArray)(object)pixelData, 0);
+			IntPtr buffer =  Marshal.UnsafeAddrOfPinnedArrayElement(pixelData, 0);
 
 			var image = new Bitmap(width, height, width * 4, PixelFormat.Format32bppPArgb, buffer);			
 
 			return Tuple.Create(image, handle);
-		}
-
-		public void DrawImageFill( texture2D texture )
-		{
-			draw
-			{
-				float2[] Vertices: new []
-				{
-					float2(0, 0), float2(1, 0), float2(1, 1),
-					float2(1, 1), float2(0, 1), float2(0, 0)
-				};
-				float2 VertexData: vertex_attrib(Vertices);
-				VertexCount : 6;
-
-				ClipPosition: float4(VertexData*2 -1, 0,1);
-
-				DepthTestEnabled: false;
-				PixelColor: sample(texture, float2(VertexData.X,1-VertexData.Y), Uno.Graphics.SamplerState.LinearClamp);
-			};
 		}
 
 		void VerifyCreated()
@@ -1213,15 +1194,10 @@ namespace Fuse.Drawing
 		}
 
 		[DotNetType("System.Runtime.InteropServices.Marshal")]
-		internal extern(CIL) static class Marshal
+		internal extern(DOTNET) static class Marshal
 		{
-			public static extern IntPtr UnsafeAddrOfPinnedArrayElement(CilArray arr, int index);
+			public static extern IntPtr UnsafeAddrOfPinnedArrayElement(Array arr, int index);
 			public static extern void Copy(IntPtr source, byte[] destination, int start, int length);
-		}
-
-		[DotNetType("System.Array")]
-		internal extern(CIL) class CilArray
-		{
 		}
 
 		[DotNetType("System.Drawing.Point")]

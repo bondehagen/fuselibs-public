@@ -3,6 +3,7 @@ using Uno.Graphics;
 using Uno.UX;
 using Uno.Collections;
 
+using Fuse.Drawing;
 using Fuse.Nodes;
 
 namespace Fuse.Elements
@@ -55,12 +56,20 @@ namespace Fuse.Elements
 			if (!PinAndValidate(dc))
 				return false;
 
-			if defined(FUSELIBS_PROFILING)
-				Profiling.LogEvent("Blitting out cache", 0);
+			bool validated = false;
+			try
+			{
+				if defined(FUSELIBS_PROFILING)
+					Profiling.LogEvent("Blitting out cache", 0);
 
-			Blit(dc, _element.Opacity);
-			Unpin();
-			return true;
+				Blit(dc, _element.Opacity);
+				validated = true;
+			}
+			finally
+			{
+				Unpin(validated);
+			}
+			return validated;
 		}
 
 		internal void DrawHeuristically(DrawContext dc)
@@ -145,16 +154,30 @@ namespace Fuse.Elements
 				}
 			}
 
-			for (int i = 0; i < _cacheTiles.Length; ++i)
+			try
 			{
-				_cacheTiles[i].EnsureHasFramebuffer();
-				_cacheTiles[i]._compositMatrix = CalculateCompositMatrix(dc, _cacheTiles[i]._rect);
-
-				_cacheTiles[i]._framebuffer.Pin();
-				if (!_cacheTiles[i]._framebuffer.IsContentValid || !_isValid)
+				for (int i = 0; i < _cacheTiles.Length; ++i)
 				{
-					Repaint(dc, _cacheTiles[i]);
+					_cacheTiles[i].EnsureHasFramebuffer();
+					_cacheTiles[i]._compositMatrix = CalculateCompositMatrix(dc, _cacheTiles[i]._rect);
+
+					_cacheTiles[i]._framebuffer.Pin();
+					if (!_cacheTiles[i]._framebuffer.IsContentValid || !_isValid)
+					{
+						Repaint(dc, _cacheTiles[i]);
+					}
 				}
+			}
+			catch (Exception e)
+			{
+				// manually unpin all CacheFramebuffers
+				for (int i = 0; i < _cacheTiles.Length; ++i)
+				{
+					if (_cacheTiles[i]._framebuffer.IsPinned)
+						_cacheTiles[i]._framebuffer.Unpin(false);
+				}
+
+				throw;
 			}
 
 			_isValid = true;
@@ -162,11 +185,11 @@ namespace Fuse.Elements
 		}
 
 
-		private void Unpin()
+		private void Unpin(bool validate)
 		{
 			foreach (CacheTile tile in _cacheTiles)
 			{
-				tile._framebuffer.Unpin(true);
+				tile._framebuffer.Unpin(validate);
 			}
 		}
 
@@ -215,31 +238,9 @@ namespace Fuse.Elements
 		{
 			foreach (CacheTile tile in cache.CacheTiles)
 			{
-				draw
-				{
-					float2[] Vertices: new[]
-					{
-						float2(0, 0), float2(0, 1), float2(1, 1),
-						float2(0, 0), float2(1, 1), float2(1, 0)
-					};
-
-					float2 Coord: vertex_attrib(Vertices);
-					float2 TexCoord: float2(Coord.X, 1.0f - Coord.Y);
-
-					float2 Size: float2(tile.Texture.Size.X, tile.Texture.Size.Y) / dc.ViewportPixelsPerPoint;
-
-					float4 p: Vector.Transform(float4(Coord * Size, 0, 1), tile._compositMatrix);
-
-					ClipPosition: Vector.Transform(p, dc.Viewport.ViewProjectionTransform );
-
-					PixelColor: sample(tile.Texture, TexCoord, SamplerState.LinearClamp);
-
-					PixelColor: float4(prev.XYZ*opacity, prev.W*opacity);
-
-					CullFace: dc.CullFace;
-					DepthTestEnabled: false;
-					apply Fuse.Drawing.PreMultipliedAlphaCompositing;
-				};
+				var size = float2(tile.Texture.Size.X, tile.Texture.Size.Y) / dc.ViewportPixelsPerPoint;
+				var localToClipTransform = Matrix.Mul(tile._compositMatrix, dc.Viewport.ViewProjectionTransform);
+				Blitter.Singleton.Blit(tile.Texture, new Rect(float2(0), size), localToClipTransform, opacity, true, dc.CullFace);
 
 				if defined(FUSELIBS_DEBUG_DRAW_RECTS)
 					DrawRectVisualizer.Capture(float2(0), float2(tile.Texture.Size.X, tile.Texture.Size.Y), tile._compositMatrix, dc);

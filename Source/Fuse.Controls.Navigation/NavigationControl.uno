@@ -113,7 +113,8 @@ namespace Fuse.Controls
 		
 		//the outlet page on which this control resides.
 		protected Visual AncestorPage { private set; get; }
-		protected RouterPage AncestorRouterPage { private set; get; }
+
+		internal RouterPage AncestorRouterPage { private set; get; }
 
 		/* 
 			This affects the structure of navigation, in particular by associating PageData.RouterPage's
@@ -139,9 +140,14 @@ namespace Fuse.Controls
 					if (router != null)
 						this.AncestorRouterPage = router.RootPage;
 					else
-						this.AncestorRouterPage = new RouterPage();
+						this.AncestorRouterPage = RouterPage.CreateDefault();
 				}
+			} 
+			else
+			{
+				this.AncestorRouterPage = RouterPage.CreateDefault();
 			}
+			
 		}
 		
 		protected override void OnRooted()
@@ -156,8 +162,17 @@ namespace Fuse.Controls
 			//do after child rooting since it relies on the navigation behaviour to have been rooted
 			for (var c = FirstChild<Element>(); c != null; c = c.NextSibling<Element>())
 				UpdateChild(c);
-				
+			
+			if (AncestorRouterPage != null)
+				AncestorRouterPage.ChildRouterPagesUpdated += OnChildRouterPagesUpdated;
 			OnPageHistoryChanged();
+			
+			BlockInputRooted();
+		}
+		
+		void OnChildRouterPagesUpdated()
+		{
+			RouterPage.BubbleHistoryChanged(this);
 		}
 		
 		/**
@@ -192,8 +207,7 @@ namespace Fuse.Controls
 			//attach a default RouterPage if it doesn't have one
 			var pd = PageData.GetOrCreate(c);
 			if (pd.RouterPage == null)
-				pd.AttachRouterPage( new RouterPage{ Path = c.Name, Parameter = c.Parameter,
-					Visual = c });
+				pd.AttachRouterPage( new RouterPage( c.Name, c.Parameter ));
 		}
 
 		/**
@@ -207,6 +221,7 @@ namespace Fuse.Controls
 		
 		protected override void OnUnrooted()
 		{
+			BlockInputUnrooted();
 			OnPageHistoryUnrooted();
 			
 			if (AncestorPage != null)
@@ -298,7 +313,7 @@ namespace Fuse.Controls
 			to get the derived classes compiling and overriding parts of the interface. So the derived
 			classes simply implement the entire interaace and call this function.
 		*/
-		protected OutletType RouterOutletType
+		internal OutletType RouterOutletType
 		{
 			get
 			{
@@ -308,7 +323,7 @@ namespace Fuse.Controls
 			}
 		}
 		
-		internal class ControlPageData
+		public class ControlPageData
 		{
 			public Trigger Enter, Exit, Inactive, Removing;
 			
@@ -450,7 +465,8 @@ namespace Fuse.Controls
 				return;
 				
 			var pages = AncestorRouterPage.ChildRouterPages;
-			var current = (this as IRouterOutlet).GetCurrent();
+			Visual ignore;
+			var current = (this as IRouterOutlet).GetCurrent(out ignore);
 			if (pages.Count == 0 && current != null)
 				pages.Add(current);
 		}

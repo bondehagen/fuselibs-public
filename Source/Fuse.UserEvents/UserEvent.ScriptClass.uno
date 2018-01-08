@@ -11,7 +11,7 @@ namespace Fuse
 		static UserEvent()
 		{
 			ScriptClass.Register(typeof(UserEvent),
-				new ScriptMethod<UserEvent>("raise", raise, ExecutionThread.MainThread)
+				new ScriptMethod<UserEvent>("raise", raise)
 			);
 		}
 
@@ -63,7 +63,7 @@ namespace Fuse
 				</JavaScript>
 			
 		**/
-		static void raise(Context c, UserEvent n, object[] args)
+		static void raise(UserEvent n, object[] args)
 		{
 			if (args.Length == 0)
 			{
@@ -77,7 +77,7 @@ namespace Fuse
 				return;
 			}
 			
-			var so = args[0] as Scripting.Object;
+			var so = args[0] as IObject;
 			if (so == null)
 			{
 				Fuse.Diagnostics.UserError( "Raise must be called with a JavaScript object to define name/value pairs", 

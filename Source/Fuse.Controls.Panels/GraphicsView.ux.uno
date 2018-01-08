@@ -253,16 +253,35 @@ namespace Fuse.Controls
 
 		public float PixelsPerPoint
 		{
-			get { return Parent != null ? Parent.Viewport.PixelsPerPoint :
-				AppBase.Current.PixelsPerPoint; }
+			get
+			{
+				if (Parent != null)
+					return Parent.Viewport.PixelsPerPoint;
+				else
+				{
+					// this only happens during testing
+					if (AppBase.Current == null)
+						return 1;
+
+					return AppBase.Current.PixelsPerPoint;
+				}
+			}
 		}
 
-		public float2 Size
+		[Obsolete]
+		/** Deprecated use ActualSize instead. 2018-01-02 */
+		public new float2 Size
 		{
 			get { return ActualSize; }
 		}
 
+		[Obsolete]
+		/** Deprecated use ActualPixelSize instead. 2018-01-02 */
 		public float2 PixelSize
+		{
+			get { return ActualPixelSize; }
+		}
+		public float2 ActualPixelSize
 		{
 			get { return ActualSize * PixelsPerPoint; }
 		}
@@ -371,10 +390,7 @@ namespace Fuse.Controls
 		protected override void DrawWithChildren(DrawContext dc)
 		{
 			if (!_inBackground)
-			{
 				base.DrawWithChildren(dc);
-				((AppBase)Fuse.AppBase.Current).DrawSelection(dc);
-			}
 		}
 
 		protected override VisualBounds CalcRenderBounds()

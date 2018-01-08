@@ -137,7 +137,7 @@ namespace Fuse.Reactive
 		/** Replaces the `IObservableArray` with the given values, without notifying this subscription of the change. */
 		void ReplaceAllExclusive(IArray values);
 	}
-	
+
 	/** Represents an object that can receive change notifications for an `IObservableArray`. */
 	interface IObserver
 	{

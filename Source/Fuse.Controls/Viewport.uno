@@ -3,6 +3,7 @@ using Uno.Graphics;
 using Uno.UX;
 
 using Fuse.Nodes;
+using Fuse.Drawing;
 
 namespace Fuse.Elements
 {
@@ -254,7 +255,7 @@ namespace Fuse.Elements
 				dc.PushCullFace(CullFace);
 
 			if (Mode == ViewportMode.RenderToTexture) {
-				var pxSize = PixelSize;
+				var pxSize = ((ICommonViewport)this).PixelSize;
 				var fb = FramebufferPool.Lock( int2((int)pxSize.X,(int)pxSize.Y), Format.RGBA8888, true );
 				dc.PushRenderTargetViewport(fb, this);
 
@@ -263,16 +264,11 @@ namespace Fuse.Elements
 
 				dc.PopRenderTargetViewport();
 
-				//TODO: mvoe to static class
-				draw
-				{
-					apply Fuse.Drawing.Planar.Image;
-					DrawContext: dc;
-					Visual: this;
-					Size: ActualSize;
-					Invert: true;
-					Texture: fb.ColorBuffer;
-				};
+				Blitter.Singleton.Blit(
+					fb.ColorBuffer,
+					new Rect(float2(0, 0), ActualSize),
+					dc.GetLocalToClipTransform(this),
+					1.0f, true);
 
 				if defined(FUSELIBS_DEBUG_DRAW_RECTS)
 					DrawRectVisualizer.Capture(float2(0), ActualSize, WorldTransform, dc);
@@ -357,19 +353,19 @@ namespace Fuse.Elements
 		bool IsDisabled { get { return Mode == ViewportMode.Disabled; } }
 
 		//ICommonViewport
-		public float PixelsPerPoint
+		public float ICommonViewport.PixelsPerPoint
 		{
 			get { return Parent.Viewport.PixelsPerPoint; }
 		}
-		public float2 Size
+		public float2 ICommonViewport.Size
 		{
 			get { return IsDisabled ? Parent.Viewport.Size : ActualSize; }
 		}
-		public float2 PixelSize
+		public float2 ICommonViewport.PixelSize
 		{
-			get { return IsDisabled ? Parent.Viewport.PixelSize : ActualSize * PixelsPerPoint; }
+			get { return IsDisabled ? Parent.Viewport.PixelSize : ActualSize * ((ICommonViewport)this).PixelsPerPoint; }
 		}
-		public float4x4 ViewTransform 
+		public float4x4 ICommonViewport.ViewTransform 
 		{
 			get { return IsDisabled ? Parent.Viewport.ViewTransform : FrustumViewport.ViewTransform; }
 		}

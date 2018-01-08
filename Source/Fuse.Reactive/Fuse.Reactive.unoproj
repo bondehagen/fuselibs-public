@@ -2,7 +2,7 @@
   "Copyright": "Copyright (c) Fusetools AS 2017",
   "Description": "Framework for reactive programming",
   "Publisher": "Fusetools AS",
-  "Version": "1.3.0-rc3",
+  "Version": "1.6.1",
   "Package": {
     "ProjectUrl": "https://fusetools.com"
   },
@@ -15,7 +15,8 @@
   ],
   "Projects": [
     "../Fuse.Common/Fuse.Common.unoproj",
-    "../Fuse.Nodes/Fuse.Nodes.unoproj"
+    "../Fuse.Nodes/Fuse.Nodes.unoproj",
+    "../Fuse.Scripting/Fuse.Scripting.unoproj"
   ],
   "InternalsVisibleTo": [
     "Fuse.Common.Test.Helpers",
@@ -23,12 +24,13 @@
     "Fuse.Reactive.Bindings",
     "Fuse.Reactive.Expressions",
     "Fuse.Expressions.Test",
-    "Fuse.Reactive.JavaScript",
+    "Fuse.Scripting.JavaScript",
     "Fuse.Reactive.Test",
     "Fuse.Scripting.Test",
     "Fuse.Selection",
     "Fuse.Common.Test.Helpers",
     "Fuse.Controls.Navigation",
+    "Fuse.Controls.Navigation.Test",
     "Fuse.Charting",
     "Fuse.Charting.Test",
     "FuseTest",

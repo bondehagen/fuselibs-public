@@ -2,12 +2,13 @@
   "Copyright": "Copyright (c) Fusetools AS 2017",
   "Description": "Native DatePicker",
   "Publisher": "Fusetools AS",
-  "Version": "1.0.0",
+  "Version": "1.6.1",
   "Package": {
     "ProjectUrl": "https://fusetools.com"
   },
   "Projects": [
     "../Fuse.Common/Fuse.Common.unoproj",
+    "../Fuse.Controls/Fuse.Controls.unoproj",
     "../Fuse.Controls.Native/Fuse.Controls.Native.unoproj",
     "../Fuse.Controls.Panels/Fuse.Controls.Panels.unoproj",
     "../Fuse.Controls.Primitives/Fuse.Controls.Primitives.unoproj",

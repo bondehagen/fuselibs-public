@@ -26,19 +26,19 @@ namespace Fuse.Scripting
 				_rt = rt;
 			}
 
-			public object Require(object[] args)
+			public object Require(Context context, object[] args)
 			{
 				if (args.Length != 1) throw new Error("require(): accepts exactly one argument, " + args.Length + " provided");
 
 				var id = args[0] as string;
 				if (id == null) throw new Error("require(): argument must be a string");
 
-				return Require(id);
+				return Require(context, id);
 			}
 
 			static string _lastErrorPath;
 
-			public object Require(string id)
+			object Require(Context context, string id)
 			{
 				bool isFile;
 				var path = _m.ComputePath(id, out isFile);
@@ -80,7 +80,7 @@ namespace Fuse.Scripting
 
 						if (!e.Message.Contains(ModuleContainsAnErrorMessage))
 						{
-							Diagnostics.UserError("JavaScript error in " + path + " line " + e.LineNumber + ". " + e.ErrorMessage, this);
+							Diagnostics.UserError("JavaScript error in " + path + " line " + e.LineNumber + ". " + e.Message, this);
 							_lastErrorPath = path;
 						}
 						throw new Error(ModuleContainsAnErrorMessage + id);
@@ -91,9 +91,7 @@ namespace Fuse.Scripting
 					module.AddDependency(_dependant.Invalidate);
 				}
 
-				
-
-				return module.Object["exports"];
+				return module.GetExports(context);
 			}
 		}
 

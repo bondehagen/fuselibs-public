@@ -10,7 +10,7 @@ using Uno.Threading;
 namespace Fuse.Controls.VideoImpl.CIL
 {
 
-	extern(CIL) internal class VideoLoader
+	extern(DOTNET) internal class VideoLoader
 	{
 		class VideoPromise : Promise<IVideoPlayer>
 		{
@@ -91,7 +91,7 @@ namespace Fuse.Controls.VideoImpl.CIL
 
 	}
 
-	extern(CIL) internal class VideoPlayer : IVideoPlayer
+	extern(DOTNET) internal class VideoPlayer : IVideoPlayer
 	{
 		VideoTexture _videoTexture;
 		public VideoTexture VideoTexture
@@ -165,7 +165,7 @@ namespace Fuse.Controls.VideoImpl.CIL
 			if (Fuse.Video.Graphics.CIL.VideoImpl.IsFrameAvailable(_handle))
 			{
 				GL.PixelStore(GLPixelStoreParameter.UnpackAlignment, 1);
-				Fuse.Video.Graphics.CIL.VideoImpl.UpdateTexture(_handle, _texture.GLTextureHandle);
+				Fuse.Video.Graphics.CIL.VideoImpl.UpdateTexture(_handle, (int) _texture.GLTextureHandle);
 				_videoTexture = new VideoTexture(_texture.GLTextureHandle);
 				OnFrameAvailable();
 			}
@@ -196,10 +196,10 @@ namespace Fuse.Video.Graphics.CIL
 {
 
 	[TargetSpecificImplementation, DotNetType]
-	extern(CIL) internal class VideoHandle { }
+	extern(DOTNET) internal class VideoHandle { }
 
 	[TargetSpecificImplementation, DotNetType]
-	extern(CIL) internal static class VideoImpl
+	extern(DOTNET) internal static class VideoImpl
 	{
 
 		[TargetSpecificImplementation]
@@ -248,7 +248,7 @@ namespace Fuse.Video.Graphics.CIL
 		public static extern void Pause(VideoHandle handle);
 
 		[TargetSpecificImplementation]
-		public static extern void UpdateTexture(VideoHandle handle, GLTextureHandle textureHandle);
+		public static extern void UpdateTexture(VideoHandle handle, int textureHandle);
 
 		[TargetSpecificImplementation]
 		public static extern void Dispose(VideoHandle handle);

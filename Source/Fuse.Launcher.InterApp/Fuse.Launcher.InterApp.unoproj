@@ -2,23 +2,21 @@
   "Copyright": "Copyright (c) Fusetools AS 2017",
   "Description": "Native Launcher",
   "Publisher": "Fusetools AS",
-  "Version": "1.3.0-rc3",
+  "Version": "1.6.1",
   "Package": {
     "ProjectUrl": "https://fusetools.com"
   },
   "Packages": [
     "Uno.Net.Http",
-    "Uno.Permissions",
-    "UnoCore",
-    "Fuse.Platform",
-    "Fuse.Animations",
-    "Fuse.Designer",
-    "Fuse.Triggers",
-    "Fuse.Common",
-    "Fuse.Nodes",
-    "Fuse.Scripting",
-    "Fuse.Android",
-    "Fuse.iOS"
+    "Uno.Permissions"
+  ],
+  "Projects": [
+    "../Fuse.Platform/Fuse.Platform.unoproj",
+    "../Fuse.Triggers/Fuse.Triggers.unoproj",
+    "../Fuse.Nodes/Fuse.Nodes.unoproj",
+    "../Fuse.Scripting/Fuse.Scripting.unoproj",
+    "../Fuse.Android/Fuse.Android.unoproj",
+    "../Fuse.iOS/Fuse.iOS.unoproj"
   ],
   "Includes": [
     "InterApp/InterAppLauncher.uno",

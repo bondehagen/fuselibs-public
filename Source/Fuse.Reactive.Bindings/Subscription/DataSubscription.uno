@@ -21,7 +21,8 @@ namespace Fuse.Reactive
 			FindData();
 		}
 
-		bool _isResolved;
+		bool _isResolved = false;
+		bool _hasData = false;
 
 		void FindData()
 		{
@@ -32,7 +33,14 @@ namespace Fuse.Reactive
 			_origin.EnumerateData(this); 
 
 			if (!_isResolved)
+			{
 				_diag = Diagnostics.ReportTemporalUserWarning("{" + Key + "} not found in data context", _origin);
+				if (_hasData)
+				{
+					_listener.OnLostData(_source);
+					_hasData = false;
+				}
+			}
 		}
 
 		object _currentData;
@@ -51,8 +59,14 @@ namespace Fuse.Reactive
 		{
 			var w = _sub as IPropertySubscription;
 			if (w != null)
-				return w.TrySetExclusive(Key, newValue);
-			
+			{
+				if (w.TrySetExclusive(Key, newValue))
+				{
+					_currentData = newValue;
+					return true;
+				}
+			}
+
 			return false;
 		}
 
@@ -77,8 +91,9 @@ namespace Fuse.Reactive
 		void ResolveInner(object data)
 		{
 			_isResolved = true;
-			if (data != _currentData)
+			if (data != _currentData || !_hasData)
 			{
+				_hasData = true;
 				_currentData = data;
 				_listener.OnNewData(_source, data);
 			}

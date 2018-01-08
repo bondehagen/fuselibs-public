@@ -93,13 +93,9 @@ namespace Fuse.Elements
 			get
 			{
 				if defined(MOBILE)
-				{
 					return (int2)Fuse.Platform.SystemUI.Frame.Size;
-				}
 				else
-				{
-					return int2(2048, 2048);
-				}
+					return int2(0);
 			}
 		}
 	}
@@ -126,10 +122,19 @@ namespace Fuse.Elements
 
 		static void UpdateElementAtlasSize()
 		{
-			var clientSize = DisplayHelpers.DisplaySizeHint;
+			var maxTextureSize = Texture2D.MaxSize;
+			if (maxTextureSize < 1)
+				throw new Exception("zero-sized Texture2D.MaxSize");
 
-			ElementAtlasSize = int2(Math.Min((clientSize.X * 3) / 2, Texture2D.MaxSize),
-			                        Math.Min(clientSize.Y / 2, Texture2D.MaxSize));
+			var displaySizeHint = DisplayHelpers.DisplaySizeHint;
+			if (displaySizeHint.X < 1 ||
+			    displaySizeHint.Y < 1)
+			{
+				displaySizeHint = int2(2048);
+			}
+
+			ElementAtlasSize = int2(Math.Min((displaySizeHint.X * 3) / 2, maxTextureSize),
+			                        Math.Min(displaySizeHint.Y / 2, maxTextureSize));
 		}
 
 		static void OnResized(object sender, EventArgs args)

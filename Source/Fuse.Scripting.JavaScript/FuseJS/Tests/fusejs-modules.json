@@ -1,0 +1,7 @@
+[
+    "FuseJS/Observable",
+    "FuseJS/EventEmitter",
+    "FuseJS/Fetch",
+    "FuseJS/FetchJson",
+    "FuseJS/DI"
+]

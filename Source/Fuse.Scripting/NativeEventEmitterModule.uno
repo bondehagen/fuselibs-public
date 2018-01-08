@@ -39,30 +39,30 @@ namespace Fuse.Scripting
 			}
 
 			if (_context != null)
-				_context.Dispatcher.Invoke(ResetListenersJS);
+				_context.ThreadWorker.Invoke(ResetListenersJS);
 		}
 
-		void ResetListenersJS()
+		void ResetListenersJS(Scripting.Context context)
 		{
-			_this.CallMethod("removeAllListeners");
+			_this.CallMethod(context, "removeAllListeners");
 			// Reconnect any callbacks set from native code
 			lock (_mutex)
 				foreach (var l in _listeningCallbacks)
 					Dispatch(new OnClosure(l.Item1, l.Item2).On, true);
-			AppInitialized.On(_context, OnAppInitialized);
+			AppInitialized.On(context, OnAppInitialized);
 		}
 
 		override object CreateExportsObject(Context c)
 		{
 			_context = c;
-			_this = EventEmitterModule.GetConstructor(_context).Construct(_eventNames);
+			_this = EventEmitterModule.GetConstructor(c).Construct(c, _eventNames);
 
 			AppInitialized.On(c, OnAppInitialized);
 
 			return _this;
 		}
 
-		void OnAppInitialized()
+		void OnAppInitialized(Context c)
 		{
 			lock (_mutex)
 			{
@@ -124,6 +124,23 @@ namespace Fuse.Scripting
 			return new object[] { "error", context.NewError(reason) };
 		}
 
+		class ActionClosure
+		{
+			readonly Action<Context, Scripting.Object> _action;
+			readonly Scripting.Object _arg;
+
+			public ActionClosure(Action<Context, Scripting.Object> action, Scripting.Object arg)
+			{
+				_action = action;
+				_arg = arg;
+			}
+
+			public void Run(Context context)
+			{
+				_action(context, _arg);
+			}
+		}
+
 		void Dispatch(Action<Context, Scripting.Object> action, bool alwaysQueueEventBeforeInit = false)
 		{
 			lock (_mutex)
@@ -137,7 +154,8 @@ namespace Fuse.Scripting
 					return;
 				}
 			}
-			_context.Dispatcher.Invoke2(action, _context, _this);
+
+			_context.ThreadWorker.Invoke(new ActionClosure(action, _this).Run);
 		}
 
 		/** Connect a @NativeEvent to an event.
@@ -171,7 +189,7 @@ namespace Fuse.Scripting
 
 			public void Emit(Context c, Scripting.Object o)
 			{
-				o.CallMethod("emit", _args);
+				o.CallMethod(c, "emit", _args);
 			}
 		}
 
@@ -186,7 +204,7 @@ namespace Fuse.Scripting
 
 			public void Emit(Context c, Scripting.Object o)
 			{
-				o.CallMethod("emit", _argsFactory(c));
+				o.CallMethod(c, "emit", _argsFactory(c));
 			}
 		}
 
@@ -203,7 +221,7 @@ namespace Fuse.Scripting
 
 			public void Emit(Context c, Scripting.Object o)
 			{
-				o.CallMethod("emit", _argsFactory(c, _t));
+				o.CallMethod(c, "emit", _argsFactory(c, _t));
 			}
 		}
 
@@ -220,7 +238,7 @@ namespace Fuse.Scripting
 
 			public void On(Context c, Scripting.Object o)
 			{
-				o.CallMethod("on", _eventName, _listener);
+				o.CallMethod(c, "on", _eventName, _listener);
 			}
 		}
 	}

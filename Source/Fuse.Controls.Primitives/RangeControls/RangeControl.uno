@@ -42,7 +42,12 @@ namespace Fuse.Controls
 	public class RangeControl: Panel, IProgress, IValue<double>, IRangeViewHost
 	{
 		double _minimum = 0.0f;
-		/** Minimum value of the RangeControl. Defaults to 0*/
+		/** Minimum value of the RangeControl. Defaults to 0
+
+			This is the left/top value of the RangeControl and may be a value larger than Maximum.
+			
+			@see Range
+		*/
 		public double Minimum
 		{
 			get { return _minimum; }
@@ -55,9 +60,15 @@ namespace Fuse.Controls
 				}
 			}
 		}
-
+		
 		double _maximum = 100.0f;
-		/** Maximum value of the RangeControl. Defaults to 100 */
+		/** 
+			Maximum value of the RangeControl. Defaults to 100 
+		
+			This is the bottom/right value of the RangeControl and may be a value smaller than Minimum.
+			
+			@see Range
+		*/
 		public double Maximum
 		{
 			get { return _maximum; }
@@ -70,9 +81,31 @@ namespace Fuse.Controls
 				}
 			}
 		}
+		
+		/**
+			The range of values covered by the control.
+			
+			This maps to `Minimum, Maximum`.
+			
+			This range is not enforced by the `RangeControl`, the actual `Value` may be programmatically set outside the desired range. This is required to support bound values correctly where the order of  setting `Range` and `Value` is undefined. 
+			
+			The standard range behaviours @LinearRangeBehavior and @CircularRangeBehavior will clamp the user's selection to the range.
+		*/
+		public float2 Range
+		{
+			get { return float2( (float)Minimum, (float)Maximum ); }
+			set
+			{
+				Minimum = value[0];
+				Maximum = value[1];
+			}
+		}
 
 		double _value = 0.0;
 		[UXOriginSetter("SetValue")]
+		/**
+			The current value of the control.
+		*/
 		public double Value
 		{
 			get { return _value; }
@@ -97,24 +130,23 @@ namespace Fuse.Controls
 
 		public void SetValue(double value, IPropertyListener origin)
 		{
-			var v = ClampToRange(value);
-
-			if (v != _value)
+			if (value != _value)
 			{
-				_value = v;
-				OnValueChanged(v, origin);
+				_value = value;
+				OnValueChanged(value, origin);
 			}
 
-			if (origin != null)
+			var rv = RangeView;
+			if (rv != null && origin != rv)
 			{
-				var rv = RangeView;
-				if (rv != null)
-				{
-					rv.Progress = ValueToRelative(value);
-				}
+				rv.Progress = ValueToRelative(value);
 			}
 		}
 
+		static Selector _relativeValueName = "RelativeValue";
+		/**
+			The current value expressed in the range 0..1, where 0 is the `MinimumValue` and 1 is the `MaximumValue`.
+		*/
 		public double RelativeValue
 		{
 			get { return ValueToRelative(Value); }
@@ -125,6 +157,8 @@ namespace Fuse.Controls
 		/** 	
 			Quantizes user selection to this step. This is enforced by the behavior and not by this
 			control. The control can still have non-quantized values (allowing animation).
+			
+			A value of 0, the default, will use a continuous value range.
 		*/
 		public double UserStep
 		{
@@ -134,13 +168,8 @@ namespace Fuse.Controls
 		
 		public double RelativeUserStep
 		{
-			get { return ValueToRelative(UserStep); }
-			set { UserStep = ValueFromRelative(value); }
-		}
-
-		double ClampToRange(double v)
-		{
-			return Math.Min(Math.Max(Minimum, v), Maximum);
+			get { return StepValueToRelative(UserStep); }
+			set { UserStep = StepValueFromRelative(value); }
 		}
 
 		public event ValueChangedHandler<double> ValueChanged;
@@ -153,9 +182,6 @@ namespace Fuse.Controls
 
 		void OnRangeChanged()
 		{
-			// Makes sure value is still clamped to range, and raises ValueChanged if this
-			// leads to a change
-			SetValue(Value, null);
 			OnProgressChanged();
 		}
 
@@ -173,8 +199,12 @@ namespace Fuse.Controls
 		protected virtual void OnProgressChanged()
 		{
 			OnPropertyChanged(_progressName);
+			OnPropertyChanged(_relativeValueName);
 		}
 
+		/**
+			This is a synonym for `RelativeValue`, allowing us in a ProgressAnimation. It is recommended to use `RelativeValue` instead if referencing values directly.
+		*/
 		public double Progress
 		{
 			get { return ValueToRelative(Value); }
@@ -188,12 +218,31 @@ namespace Fuse.Controls
 		
 		internal double ValueToRelative(double value)
 		{
-			return (value - Minimum) / (Maximum - Minimum);
+			var range = Maximum - Minimum;
+			var q = (value - Minimum) / (Maximum - Minimum);
+			//this would most likely happen if the range and values are data bound, thus likely a temporary condition
+			if (range == 0 || double.IsInfinity(q))
+				return 0;
+			return q;
+		}
+		
+		internal double StepValueToRelative( double value )
+		{
+			return Math.Abs( value / (Maximum - Minimum) );
+		}
+		internal double StepValueFromRelative( double relative )
+		{
+			return Math.Abs( relative * (Maximum - Minimum) );
 		}
 
 		void IRangeViewHost.OnProgressChanged(double newProgress)
 		{
 			SetValue(ValueFromRelative(newProgress), null);	
+		}
+		
+		double IRangeViewHost.RelativeUserStep
+		{
+			get { return RelativeUserStep; }
 		}
 	}
 }

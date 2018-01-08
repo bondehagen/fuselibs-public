@@ -57,12 +57,12 @@ namespace Fuse.Navigation
 					return;
 					
 				_innerSub = new InnerSubscription(this);
+				_innerSub.Init(_context);
 			}
-			
-			protected override void OnNewData(IExpression expr, object value)
-			{
-				//TODO: can we remove this? This subscription does not get data, inner does
-			}
+
+			//TODO: Remove these, perhaps this class doesn't need to be an InnerListener?
+			protected override void OnNewData(IExpression expr, object value) { }
+			protected override void OnLostData(IExpression expr) { }
 		}
 		
 		class InnerSubscription : Subscription
@@ -71,10 +71,9 @@ namespace Fuse.Navigation
 			bool _triggered;
 			
 			public InnerSubscription(OuterSubscription outSub)
-				: base(outSub._expr, outSub._context) 
+				: base(outSub._expr)
 			{
 				_outSub = outSub;
-				Init();
 			}
 			
 			protected override void OnNewArguments(Argument[] args)
@@ -116,7 +115,7 @@ namespace Fuse.Navigation
 			}
 		}
 		
-		protected abstract bool ProcessArguments(RouterRequest request, Argument[] args);
+		internal abstract bool ProcessArguments(RouterRequest request, Argument[] args);
 		
 		protected class ArgumentArrayAdapter : IArray
 		{
@@ -149,7 +148,7 @@ namespace Fuse.Navigation
 	[UXFunction("modifyRoute")]
 	public sealed class ModifyRouteCommand : RouteModificationCommand
 	{
-		protected override bool ProcessArguments(RouterRequest request, Argument[] args)
+		internal override bool ProcessArguments(RouterRequest request, Argument[] args)
 		{
 			for (int i=0; i < args.Length; ++i)
 			{
@@ -178,7 +177,7 @@ namespace Fuse.Navigation
 	[UXFunction("gotoRoute")]
 	public sealed class GotoRouteCommand : RouteModificationCommand
 	{
-		protected override bool ProcessArguments(RouterRequest request, Argument[] args)
+		internal override bool ProcessArguments(RouterRequest request, Argument[] args)
 		{
 			return request.AddHow( ModifyRouteHow.Goto ) &&
 				request.AddPath( new ArgumentArrayAdapter(args) );
@@ -193,7 +192,7 @@ namespace Fuse.Navigation
 	[UXFunction("pushRoute")]
 	public sealed class PushRouteCommand : RouteModificationCommand
 	{
-		protected override bool ProcessArguments(RouterRequest request, Argument[] args)
+		internal override bool ProcessArguments(RouterRequest request, Argument[] args)
 		{
 			return request.AddHow( ModifyRouteHow.Push ) &&
 				request.AddPath( new ArgumentArrayAdapter(args) );

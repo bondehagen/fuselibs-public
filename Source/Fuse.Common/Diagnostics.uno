@@ -97,6 +97,7 @@ namespace Fuse
 		}
 	}
 
+	[Obsolete]
 	public interface IScriptException
 	{
 		string FileName { get; }
@@ -166,13 +167,10 @@ namespace Fuse
 		*/
 		public static IDisposable ReportTemporal(Diagnostic d)
 		{
-			if defined(FUSELIBS_NO_TOASTS)
-			{
-				if (DiagnosticReported != null)
-					DiagnosticReported(d);
+			if (DiagnosticReported != null)
+				DiagnosticReported(d);
 
-				Uno.Diagnostics.Debug.Log(d.ToString(), d.UnoType);
-			}
+			Uno.Diagnostics.Debug.Log(d.ToString(), d.UnoType);
 
 			return new Temporal(d);
 		}
@@ -182,23 +180,17 @@ namespace Fuse
 		*/
 		public static IDisposable ReportTemporalWarning(Diagnostic d)
 		{
-			if defined(FUSELIBS_NO_TOASTS)
-			{
-				d.IsTemporalWarning = true;
+			d.IsTemporalWarning = true;
 
-				if (DiagnosticReported != null)
-					DiagnosticReported(d);
-			}
+			if (DiagnosticReported != null)
+				DiagnosticReported(d);
 
 			return new Temporal(d);
 		}
 
 		public static IDisposable ReportTemporalUserWarning(string message, object origin)
 		{
-			if defined(FUSELIBS_NO_TOASTS)
-				return ReportTemporalWarning(new Diagnostic(DiagnosticType.UserWarning, message, origin, null, 0, null, null));
-			else
-				return ReportTemporal(new Diagnostic(DiagnosticType.UserWarning, message, origin, null, 0, null, null));
+			return ReportTemporalWarning(new Diagnostic(DiagnosticType.UserWarning, message, origin, null, 0, null, null));
 		}
 
 		/**

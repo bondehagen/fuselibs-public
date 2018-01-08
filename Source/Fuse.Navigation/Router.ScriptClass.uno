@@ -7,14 +7,14 @@ namespace Fuse.Navigation
 		static Router()
 		{
 			ScriptClass.Register(typeof(Router),
-				new ScriptMethod<Router>("bookmark", Bookmark, ExecutionThread.MainThread),
-				new ScriptMethod<Router>("getRoute", GetRoute, ExecutionThread.MainThread),
-				new ScriptMethod<Router>("goBack", GoBack, ExecutionThread.MainThread),
-				new ScriptMethod<Router>("goto", Goto, ExecutionThread.MainThread),
-				new ScriptMethod<Router>("gotoRelative", GotoRelative, ExecutionThread.MainThread),
-				new ScriptMethod<Router>("modify", Modify, ExecutionThread.MainThread),
-				new ScriptMethod<Router>("push", Push, ExecutionThread.MainThread),
-				new ScriptMethod<Router>("pushRelative", PushRelative, ExecutionThread.MainThread));
+				new ScriptMethod<Router>("bookmark", Bookmark),
+				new ScriptMethod<Router>("getRoute", GetRoute),
+				new ScriptMethod<Router>("goBack", GoBack),
+				new ScriptMethod<Router>("goto", Goto),
+				new ScriptMethod<Router>("gotoRelative", GotoRelative),
+				new ScriptMethod<Router>("modify", Modify),
+				new ScriptMethod<Router>("push", Push),
+				new ScriptMethod<Router>("pushRelative", PushRelative));
 		}
 
 		/**
@@ -31,14 +31,14 @@ namespace Fuse.Navigation
 			This specifies a three-level path. The first two levels, `home` and `contact` do not have any property.
 			The third level `view` specifies the `id` of the user that will be viewed.
 		*/
-		static void Goto(Context c, Router r, object[] args)
+		static void Goto( Router r, object[] args)
 		{
 			if (!r.IsRootingCompleted) return;
 
 			var where = RouterRequest.ParseFlatRoute(args);
 			if (where != null)
 			{
-				r.Goto(where);
+				r.Modify( ModifyRouteHow.Goto, where, NavigationGotoMode.Transition, "" );
 			}
 			else
 			{
@@ -67,11 +67,11 @@ namespace Fuse.Navigation
 			
 			@see fuse/navigation/router/goto
 		*/
-		static void GotoRelative(Context c, Router r, object[] args)
+		static void GotoRelative(Router r, object[] args)
 		{
-			var route = GetRelative(c, r, args);
+			var route = GetRelative(r, args);
 			if (route != null)
-				r.Goto(route);
+				r.Modify( ModifyRouteHow.Goto, route, NavigationGotoMode.Transition, "" );
 		}
 		
 		/**
@@ -82,14 +82,14 @@ namespace Fuse.Navigation
 			@see fuse/navigation/router/push
 			@see fuse/navigation/router/gotoRelative
 		*/
-		static void PushRelative(Context c, Router r, object[] args)
+		static void PushRelative(Router r, object[] args)
 		{
-			var route = GetRelative(c, r, args);
+			var route = GetRelative(r, args);
 			if (route != null)
-				r.Push(route);
+				r.Modify( ModifyRouteHow.Push, route, NavigationGotoMode.Transition, "" );
 		}
 		
-		static Route GetRelative(Context c, Router r, object[] args)
+		static RouterPageRoute GetRelative(Router r, object[] args)
 		{
 			if (args.Length < 1)
 			{
@@ -97,7 +97,7 @@ namespace Fuse.Navigation
 				return null;
 			}
 			
-			var node = c.Wrap(args[0]) as Node;
+			var node = args[0] as Node;
 			//null is actually okay for `where`
 			var where = RouterRequest.ParseFlatRoute(args, 1);
 			
@@ -118,12 +118,12 @@ namespace Fuse.Navigation
 			This specifies a three-level path. The first two levels, `home` and `contact` do not have any property.
 			The third level `view` specifies the `id` of the user that will be viewed.
 		*/
-		static void Push(Context c, Router r, object[] args)
+		static void Push(Router r, object[] args)
 		{
 			if (!r.IsRootingCompleted) return;
 
 			var where = RouterRequest.ParseFlatRoute(args);
-			r.Push(where);
+			r.Modify( ModifyRouteHow.Push, where, NavigationGotoMode.Transition, "" );
 		}
 		
 		/**
@@ -132,15 +132,10 @@ namespace Fuse.Navigation
 			
 			@scriptmethod goBack()
 		*/
-		static void GoBack(Context c, Router r, object[] args)
+		static void GoBack(Router r)
 		{
 			if (!r.IsRootingCompleted) return;
 
-			if (args.Length != 0)
-			{
-				Fuse.Diagnostics.UserError( "Router.goBack takes no parameters", r );
-				return;
-			}
 			r.GoBack();
 		}
 		
@@ -175,7 +170,7 @@ namespace Fuse.Navigation
 				- `relative`: An optional node that indicates the path is relative to this router outlet. The path is specified like in `gotoRelative`
 				- `style`: The style of the operation, which can be used as a matching criteria in transitions.
 		*/
-		static void Modify(Context c, Router r, object[] args)
+		static void Modify(Router r, object[] args)
 		{
 			if (!r.IsRootingCompleted) return;
 			
@@ -185,39 +180,18 @@ namespace Fuse.Navigation
 				return;
 			}
 			
-			var obj = args[0] as Fuse.Scripting.Object;
+			var obj = args[0] as IObject;
 			if (obj == null)
 			{
 				Fuse.Diagnostics.UserError( "`Router.modify` should be passed an object", r );
 				return;
 			}
 			
-			var request = new ScriptRouterRequest(c);
-			
-			var keys = obj.Keys;
-			for (int i=0; i < keys.Length; ++i)
-			{
-				var key = keys[i];
-				if (!request.AddArgument(key, obj[key]))
-					return;
-			}
-			request.MakeRequest(r);
-		}
-		
-		class ScriptRouterRequest : RouterRequest
-		{
-			Context _context;
+			var request = new RouterRequest(RouterRequest.Flags.FlatRoute);
+			if (!request.AddArguments(obj))
+				return;
 
-			public ScriptRouterRequest( Context context ) :
-				base( Flags.FlatRoute )
-			{
-				_context = context;
-			}
-			
-			protected override Node ParseNode(object value)
-			{
-				return _context.Wrap(value) as Node;
-			}
+			request.MakeRequest(r);
 		}
 
 		/**
@@ -237,7 +211,7 @@ namespace Fuse.Navigation
 			
 			
 		*/
-		static void Bookmark(Context c, Router r, object[] args)
+		static void Bookmark(Router r, object[] args)
 		{
 			if (!r.IsRootingCompleted) return;
 			
@@ -247,7 +221,7 @@ namespace Fuse.Navigation
 				return;
 			}
 			
-			var obj = args[0] as Fuse.Scripting.Object;
+			var obj = args[0] as IObject;
 			if (obj == null)
 			{
 				Fuse.Diagnostics.UserError( "`Router.bookmark` should be passed an object", r );
@@ -257,7 +231,7 @@ namespace Fuse.Navigation
 			//TODO: Switch to using RouterRequest
 			string name = null;
 			IRouterOutlet relative = null;
-			Route route = null;
+			RouterPageRoute route = null;
 			
 			var keys = obj.Keys;
 			for (int i=0; i < keys.Length; ++i)
@@ -271,8 +245,8 @@ namespace Fuse.Navigation
 				}
 				else if (p =="relative")
 				{
-					var node = c.Wrap(o);
-					relative = r.FindOutletUp(node as Node);
+					var node = o as Node;
+					relative = r.FindOutletUp(node);
 					if (relative == null)
 					{
 						Fuse.Diagnostics.UserError( "Could not find an outlet from the `relative` node", r );
@@ -281,7 +255,7 @@ namespace Fuse.Navigation
 				}
 				else if (p == "path")
 				{
-					var path = o as Array;
+					var path = o as IArray;
 					if (path == null)
 					{
 						Fuse.Diagnostics.UserError( "`path` should be an array", r );
@@ -328,46 +302,58 @@ namespace Fuse.Navigation
 					// and so on
 				})
 		*/
-		static void GetRoute(Context c, Router r, object[] args)
+		static object GetRoute(Context c, Router r, object[] args)
 		{
 			if (args.Length != 1) 
 			{
 				Diagnostics.UserError("Router.getRoute(): must provide exactly 1 argument.", r);
-				return;
+				return null;
 			}
 			var callback = args[0] as Function;
 			if (callback == null) 
 			{
 				Diagnostics.UserError("Router.getRoute(): argument must be a function.", r);
-				return;
+				return null;
 			}
 
-			var route = r.GetCurrentRoute();
-			c.Invoke(new GetRouteCallback(route, callback, c).Run);
+			UpdateManager.PostAction(new GetRouteCallback(c.ThreadWorker, r, callback).RunUI);
+			return null;
 		}
+
 		class GetRouteCallback
 		{
-			readonly Route _route;
+			readonly IThreadWorker _threadWorker;
+			readonly Router _router;
 			readonly Function _callback;
-			readonly Context _context;
-			public GetRouteCallback(Route route, Function callback, Context context)
+
+			Route _route;
+
+			public GetRouteCallback(IThreadWorker threadWorker, Router router, Function callback)
 			{
-				_route = route;
+				_threadWorker = threadWorker;
+				_router = router;
 				_callback = callback;
-				_context = context;
 			}
-			public void Run() {
-				_callback.Call(ToArray());
-			}
-			Array ToArray()
+
+			public void RunUI()
 			{
-				var route = _route;
+				_route = _router.GetCurrentRoute();
+				_threadWorker.Invoke(RunJS);
+			}
+
+			public void RunJS(Scripting.Context context)
+			{
+				_callback.Call(context, ToArray(context, _route));
+			}
+
+			static Array ToArray(Scripting.Context context, Route route)
+			{
 				var len = route.Length;
-				var arr = _context.NewArray(len*2);
+				var arr = context.NewArray(len*2);
 				for (int i = 0; i < len; i++)
 				{
 					arr[i*2+0] = route.Path;
-					arr[i*2+1] = _context.ParseJson(route.Parameter);
+					arr[i*2+1] = context.ParseJson(route.Parameter);
 					route = route.SubRoute;
 				}
 				return arr;

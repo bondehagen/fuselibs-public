@@ -12,7 +12,6 @@ namespace FuseJS.Test
 {
 	public class BundleTest : TestBase
 	{
-		const int JS_FRAMES_TO_STEP = 5;
 		[Test]
 		public void TestList()
 		{
@@ -22,7 +21,10 @@ namespace FuseJS.Test
 			{
 				root.StepFrameJS();
 				e.CallTest.Perform();
-				root.MultiStepFrameJS(JS_FRAMES_TO_STEP);
+
+				while (string.IsNullOrEmpty(e.output.Value))
+					root.StepFrameJS();
+
 				Assert.AreEqual("True", e.output.Value);
 			}
 		}
@@ -36,7 +38,11 @@ namespace FuseJS.Test
 			{
 				root.StepFrameJS();
 				e.CallTest.Perform();
-				root.MultiStepFrameJS(JS_FRAMES_TO_STEP);
+
+
+				while (string.IsNullOrEmpty(e.output.Value))
+					root.StepFrameJS();
+
 				Assert.AreEqual("True", e.output.Value);
 			}
 		}
@@ -50,7 +56,10 @@ namespace FuseJS.Test
 			{
 				root.StepFrameJS();
 				e.CallTest.Perform();
-				root.MultiStepFrameJS(JS_FRAMES_TO_STEP);
+
+				while (string.IsNullOrEmpty(e.output.Value))
+					root.StepFrameJS();
+
 				Assert.AreEqual("True", e.output.Value);
 			}
 		}
@@ -66,7 +75,10 @@ namespace FuseJS.Test
 			{
 				root.StepFrameJS();
 				e.CallTest.Perform();
-				root.MultiStepFrameJS(JS_FRAMES_TO_STEP);
+
+				while (string.IsNullOrEmpty(e.output.Value))
+					root.StepFrameJS();
+
 				Assert.AreEqual("True", e.output.Value);
 			}
 		}
@@ -80,7 +92,10 @@ namespace FuseJS.Test
 			{
 				root.StepFrameJS();
 				e.CallTest.Perform();
-				root.MultiStepFrameJS(JS_FRAMES_TO_STEP);
+
+				while (string.IsNullOrEmpty(e.output.Value))
+					root.StepFrameJS();
+
 				Assert.AreEqual("True", e.output.Value);
 			}
 		}

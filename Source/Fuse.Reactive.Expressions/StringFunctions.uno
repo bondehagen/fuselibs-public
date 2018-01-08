@@ -6,31 +6,28 @@ namespace Fuse.Reactive
 	public sealed class ToUpper: UnaryOperator
 	{
 		[UXConstructor]
-		public ToUpper([UXParameter("Value")] Expression value): base(value) {}
-		protected override object Compute(object s)
+		public ToUpper([UXParameter("Value")] Expression value): base(value,"toUpper") {}
+		protected override bool TryCompute(object s, out object result)
 		{
-			return s.ToString().ToUpper();
+			result = null;
+			if (s == null) return false;
+			result = s.ToString().ToUpper();
+			return true;
 		}
 
-		public override string ToString()
-		{
-			return "toUpper(" + Operand + ")";
-		}
 	}
 
 	[UXFunction("toLower")]
 	public sealed class ToLower: UnaryOperator
 	{
 		[UXConstructor]
-		public ToLower([UXParameter("Value")] Expression value): base(value) {}
-		protected override object Compute(object s)
+		public ToLower([UXParameter("Value")] Expression value): base(value, "toLower") {}
+		protected override bool TryCompute(object s, out object result)
 		{
-			return s.ToString().ToLower();
-		}
-
-		public override string ToString()
-		{
-			return "toLower(" + Operand + ")";
+			result = null;
+			if (s == null) return false;
+			result = s.ToString().ToLower();
+			return true;
 		}
 	}
 }

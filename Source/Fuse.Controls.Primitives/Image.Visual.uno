@@ -5,16 +5,27 @@ using Fuse.Drawing;
 using Fuse.Internal;
 using Fuse.Elements;
 using Fuse.Nodes;
+using Fuse.Resources;
+using Fuse.Resources.Exif;
 
 namespace Fuse.Controls
 {
 	public partial class Image
 	{
+
 		float2 GetSize()
 		{
-			if (Source != null)
-				return Container.Sizing.CalcContentSize( Source.Size, Source.PixelSize );
-			return float2(0);
+			if (Source == null)
+				return float2(0);
+
+			var size = Source.Size;
+			var pixelSize = Source.PixelSize;
+			if (Source.Orientation.HasFlag(ImageOrientation.Rotate90))
+			{
+				size = float2(Source.Size.Y, Source.Size.X);
+				pixelSize = int2(Source.PixelSize.Y, Source.PixelSize.X);
+			}
+			return Container.Sizing.CalcContentSize( size, pixelSize );
 		}
 
 		protected override float2 GetContentSize( LayoutParams lp )
@@ -74,6 +85,40 @@ namespace Fuse.Controls
 		{
 			DrawVisualColor(dc, Color);
 		}
+
+		internal static float3x3 TransformFromImageOrientation(ImageOrientation orientation)
+		{
+			var transform = float3x3.Identity;
+
+			if (orientation.HasFlag(ImageOrientation.FlipVertical))
+			{
+				transform.M22 = -1;
+				transform.M32 =  1;
+			}
+
+			if (orientation.HasFlag(ImageOrientation.Rotate180))
+			{
+				transform.M11 = -1;
+				transform.M22 = -transform.M22;
+				transform.M31 =  1;
+				transform.M32 =  1 - transform.M32;
+			}
+
+			if (orientation.HasFlag(ImageOrientation.Rotate90))
+			{
+				transform.M12 = -transform.M11;
+				transform.M11 = 0;
+
+				transform.M21 = transform.M22;
+				transform.M22 = 0;
+
+				var tmp = transform.M31;
+				transform.M31 = transform.M32;
+				transform.M32 = 1 - tmp;
+			}
+
+			return transform;
+		}
 		
 		void DrawVisualColor(DrawContext dc, float4 color)
 		{
@@ -83,16 +128,18 @@ namespace Fuse.Controls
 
 			if (Container.StretchMode == StretchMode.Scale9)
 			{
-				Fuse.Elements.Internal.Scale9Rectangle.Impl.Draw(dc, this, ActualSize, GetSize(), tex, color, 
-					Scale9Margin);
+				Fuse.Elements.Internal.Scale9Rectangle.Impl.Draw(dc, this, ActualSize, GetSize(), tex, color, Scale9Margin);
 			}
 			else
 			{
+				var imageTransform = TransformFromImageOrientation(Source.Orientation);
+
 				ImageElementDraw.Impl.
 					Draw(dc, this, _drawOrigin, _drawSize,
-					     _uvClip.XY, _uvClip.ZW - _uvClip.XY,
-					      tex, Container.ResampleMode,
-					      color);
+						_uvClip.XY, _uvClip.ZW - _uvClip.XY,
+						 imageTransform,
+						tex, Container.ResampleMode,
+						color);
 			}
 		}
 
@@ -139,23 +186,17 @@ namespace Fuse.Controls
 			}
 		}
 
+
 		public void Draw(DrawContext dc, Visual element, float2 offset,
-		                 float2 size, float2 uvPosition, float2 uvSize,
-	                     Texture2D tex, ResampleMode resampleMode,
-		                 float4 Color )
+			float2 size, float2 uvPosition, float2 uvSize,
+			float3x3 imageTransform,
+			Texture2D tex, ResampleMode resampleMode,
+			float4 Color )
 		{
-			draw
-			{
-				apply Fuse.Drawing.Planar.Image;
-				DrawContext: dc;
-				Visual: element;
-				Size: size;
-				Position: offset;
-				Texture: tex;
-				SamplerState SamplerState: GetSamplerState(resampleMode);
-				TexCoord: VertexData * uvSize + uvPosition;
-				TextureColor: prev * Color;
-			};
+			Blitter.Singleton.Blit(tex, GetSamplerState(resampleMode), false,
+			                       new Rect(uvPosition, uvSize), imageTransform,
+			                       new Rect(offset, size), dc.GetLocalToClipTransform(element),
+			                       Color);
 
 			if defined(FUSELIBS_DEBUG_DRAW_RECTS)
 				DrawRectVisualizer.Capture(offset, size, element.WorldTransform, dc);

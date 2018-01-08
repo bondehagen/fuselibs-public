@@ -1,0 +1,3 @@
+if HOST_WINDOWS {
+/* 8.34MB */ Windows: "https://files.fusetools.com/tooling/v6vFc4M0R2IW-V8-Windows.zip"
+}

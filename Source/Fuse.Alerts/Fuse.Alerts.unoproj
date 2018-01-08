@@ -2,16 +2,17 @@
   "Copyright": "Copyright (c) Fusetools AS 2017",
   "Description": "Native alerts and simple dialogs for mobile targets",
   "Publisher": "Fusetools AS",
-  "Version": "1.3.0-rc3",
+  "Version": "1.6.1",
   "Package": {
     "ProjectUrl": "https://fusetools.com"
   },
   "Packages": [
     "Uno.Collections",
-    "Uno.Threading",
-    "Fuse.Scripting"
+    "Uno.Threading"
   ],
-  "Projects": [],
+  "Projects": [
+    "../Fuse.Scripting/Fuse.Scripting.unoproj"
+  ],
   "Includes": [
     "*"
   ]

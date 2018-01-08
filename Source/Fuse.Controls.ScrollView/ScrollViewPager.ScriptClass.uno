@@ -9,17 +9,11 @@ namespace Fuse.Controls
 		static ScrollViewPager()
 		{
 			ScriptClass.Register(typeof(ScrollViewPager),
-				new ScriptMethod<ScrollViewPager>("check", check, ExecutionThread.MainThread));
+				new ScriptMethod<ScrollViewPager>("check", check));
 		}
 		
-		static void check(Context c, ScrollViewPager s, object[] args)
+		static void check(ScrollViewPager s)
 		{
-			if (args.Length != 0)
-			{
-				Fuse.Diagnostics.UserError( "`check` does not take any arguments" , s );
-				return;
-			}
-
 			//defer to allow deferred Each handling to create items
 			s.Check();
 		}

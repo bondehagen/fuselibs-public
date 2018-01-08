@@ -2,18 +2,20 @@
   "Copyright": "Copyright (c) Fusetools AS 2017",
   "Description": "Native Location",
   "Publisher": "Fusetools AS",
-  "Version": "1.3.0-rc3",
+  "Version": "1.6.1",
   "Package": {
     "ProjectUrl": "https://fusetools.com"
   },
   "Packages": [
     "Uno.Collections",
     "Uno.Threading",
-    "Uno.Permissions",
-    "Fuse.Common",
-    "Fuse.Marshal",
-    "Fuse.Scripting",
-    "Fuse.iOS.LocationPermissions"
+    "Uno.Permissions"
+  ],
+  "Projects": [
+    "../Fuse.Common/Fuse.Common.unoproj",
+    "../Fuse.Marshal/Fuse.Marshal.unoproj",
+    "../Fuse.Scripting/Fuse.Scripting.unoproj",
+    "../Fuse.iOS.LocationPermissions/Fuse.iOS.LocationPermissions.unoproj"
   ],
   "Includes": [
     "Android/UpdateListener.java:Java:Android",

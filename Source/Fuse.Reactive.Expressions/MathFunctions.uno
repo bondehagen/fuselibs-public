@@ -7,15 +7,12 @@ namespace Fuse.Reactive
 	public sealed class Min: BinaryOperator
 	{
 		[UXConstructor]
-		public Min([UXParameter("Left")] Expression left, [UXParameter("Right")] Expression right): base(left, right) {}
-		protected override object Compute(object left, object right)
+		public Min([UXParameter("Left")] Expression left, [UXParameter("Right")] Expression right): 
+			base(left, right, "min") {}
+			
+		protected override bool TryCompute(object left, object right, out object result)
 		{
-			return Marshal.Min(left, right);
-		}
-
-		public override string ToString()
-		{
-			return "min(" + Left + ", " + Right + ")";
+			return Marshal.TryMin(left, right, out result);
 		}
 	}
 
@@ -23,15 +20,12 @@ namespace Fuse.Reactive
 	public sealed class Max: BinaryOperator
 	{
 		[UXConstructor]
-		public Max([UXParameter("Left")] Expression left, [UXParameter("Right")] Expression right): base(left, right) {}
-		protected override object Compute(object left, object right)
+		public Max([UXParameter("Left")] Expression left, [UXParameter("Right")] Expression right) : 
+			base(left, right, "max") {}
+			
+		protected override bool TryCompute(object left, object right, out object result)
 		{
-			return Marshal.Max(left, right);
-		}
-
-		public override string ToString()
-		{
-			return "max(" + Left + ", " + Right + ")";
+			return Marshal.TryMax(left, right, out result);
 		}
 	}
 	
@@ -39,15 +33,13 @@ namespace Fuse.Reactive
 	public sealed class Mod : BinaryOperator
 	{
 		[UXConstructor]
-		public Mod([UXParameter("Left")] Expression left, [UXParameter("Right")] Expression right): base(left, right) {}
-		protected override object Compute(object left, object right)
+		public Mod([UXParameter("Left")] Expression left, [UXParameter("Right")] Expression right) : 
+			base(left, right, "mod") {}
+			
+		protected override bool TryCompute(object left, object right, out object result)
 		{
-			return Math.Mod( Marshal.ToFloat(left), Marshal.ToFloat(right) );
-		}
-
-		public override string ToString()
-		{
-			return "mod(" + Left + ", " + Right + ")";
+			result = Math.Mod( Marshal.ToFloat(left), Marshal.ToFloat(right) );
+			return true;
 		}
 	}
 
@@ -56,20 +48,17 @@ namespace Fuse.Reactive
 	public sealed class Even : UnaryOperator
 	{
 		[UXConstructor]
-		public Even([UXParameter("Operand")] Expression operand): base(operand) {}
-		protected override object Compute(object operand)
+		public Even([UXParameter("Operand")] Expression operand): base(operand, "even") {}
+		protected override bool TryCompute(object operand, out object result)
 		{
+			result = null;
 			float v = 0;
 			if (!Marshal.TryToType<float>(operand, out v))
-				return null;
+				return false;
 				
 			var q = (int)Math.Round(v);
-			return q % 2 == 0;
-		}
-
-		public override string ToString()
-		{
-			return "even(" + Operand +  ")";
+			result = q % 2 == 0;
+			return true;
 		}
 	}
 	
@@ -78,20 +67,17 @@ namespace Fuse.Reactive
 	public sealed class Odd : UnaryOperator
 	{
 		[UXConstructor]
-		public Odd([UXParameter("Operand")] Expression operand): base(operand) {}
-		protected override object Compute(object operand)
+		public Odd([UXParameter("Operand")] Expression operand): base(operand, "odd") {}
+		protected override bool TryCompute(object operand, out object result)
 		{
+			result = null;
 			float v = 0;
 			if (!Marshal.TryToType<float>(operand, out v))
-				return null;
+				return false;
 				
 			var q = (int)Math.Round(v);
-			return q % 2 != 0;
-		}
-
-		public override string ToString()
-		{
-			return "odd(" + Operand +  ")";
+			result = q % 2 != 0;
+			return true;
 		}
 	}
 
@@ -112,25 +98,24 @@ namespace Fuse.Reactive
 	public sealed class Alternate : BinaryOperator
 	{
 		[UXConstructor]
-		public Alternate([UXParameter("Left")] Expression left, [UXParameter("Right")] Expression right): base(left, right) {}
-		protected override object Compute(object left, object right)
+		public Alternate([UXParameter("Left")] Expression left, [UXParameter("Right")] Expression right) : 
+			base(left, right, "alternate") {}
+			
+		protected override bool TryCompute(object left, object right, out object result)
 		{
+			result = null;
 			float fvalue = 0;
 			float fgroup = 0;
 			if (!Marshal.TryToType<float>(left, out fvalue) ||
 				!Marshal.TryToType<float>(right, out fgroup))
-				return null;
+				return false;
 			var value = (int)Math.Round(fvalue);
 			var group = (int)Math.Round(fgroup);
 			var b = value >= 0 ? 
 				(value % (group*2)) < group: 
 				( -(value+1) % (group*2)) >= group;
-			return b;
-		}
-
-		public override string ToString()
-		{
-			return "alternate(" + Left + ", " + Right + ")";
+			result = b;
+			return true;
 		}
 	}
 
@@ -144,16 +129,15 @@ namespace Fuse.Reactive
 	public abstract class UnaryFloatOperator : UnaryOperator
 	{
 		internal delegate double FloatOp(double value);
-		string _name;
 		FloatOp _op;
 		internal UnaryFloatOperator(Expression operand, string name, FloatOp op) : 
-			base(operand) 
+			base(operand, name)
 		{
-			_name = name;
 			_op = op;
 		}
-		protected override object Compute(object operand)
+		protected sealed override bool TryCompute(object operand, out object result)
 		{
+			result = null;
 			float4 v;
 			int size;
 			if (Marshal.TryToZeroFloat4(operand, out v, out size))
@@ -161,21 +145,21 @@ namespace Fuse.Reactive
 				switch (size)
 				{
 					case 1:
-						return _op(v[0]);
+						result = (float)_op(v[0]);
+						return true;
 					case 2:
-						return float2((float)_op(v[0]),(float)_op(v[1]));
+						result = float2((float)_op(v[0]),(float)_op(v[1]));
+						return true;
 					case 3:
-						return float3((float)_op(v[0]),(float)_op(v[1]),(float)_op(v[2]));
+						result = float3((float)_op(v[0]),(float)_op(v[1]),(float)_op(v[2]));
+						return true;
 					case 4:
-						return float4((float)_op(v[0]),(float)_op(v[1]),(float)_op(v[2]),(float)_op(v[3]));
+						result = float4((float)_op(v[0]),(float)_op(v[1]),(float)_op(v[2]),(float)_op(v[3]));
+						return true;
 				}
 			}
 				
-			return null;
-		}
-		public override string ToString()
-		{
-			return _name + "(" + Operand +  ")";
+			return false;
 		}
 	}
 
@@ -185,26 +169,24 @@ namespace Fuse.Reactive
 	public abstract class BinaryFloatOperator : BinaryOperator
 	{
 		internal delegate double FloatOp(double a, double b);
-		string _name;
 		FloatOp _op;
 		internal BinaryFloatOperator(Expression left, Expression right, string name, FloatOp op) : 
-			base(left, right) 
+			base(left, right, name) 
 		{
-			_name = name;
 			_op = op;
 		}
-		protected override object Compute(object left, object right)
+		
+		protected sealed override bool TryCompute(object left, object right, out object result)
 		{
+			result = null;
+			
 			double lv = 0;
 			double rv = 0;
 			if (!Marshal.TryToType<double>(left, out lv) ||
 				!Marshal.TryToType<double>(right, out rv))
-				return null;
-			return _op(lv, rv);
-		}
-		public override string ToString()
-		{
-			return _name + "(" + Left + "," + Right +  ")";
+				return false;
+			result = _op(lv, rv);
+			return true;
 		}
 	}
 	
@@ -418,32 +400,37 @@ namespace Fuse.Reactive
 		public Lerp([UXParameter("First")] Expression first, 
 			[UXParameter("Second")] Expression second, 
 			[UXParameter("Third")] Expression third) : 
-			base(first, second, third) 
+			base(first, second, third, Flags.None)
 		{ }
-		protected override object Compute(object a, object b, object t)
+		protected override bool TryCompute(object a, object b, object t, out object result)
 		{
+			result = null;
 			float4 av = float4(0), bv = float4(0);
 			int asize = 0, bsize = 0;
 			float tv = 0;
 			if (!Marshal.TryToZeroFloat4(a, out av, out asize) ||	
 				!Marshal.TryToZeroFloat4(b, out bv, out bsize) ||
 				!Marshal.TryToType<float>(t, out tv))
-				return null;
+				return false;
 			int size = Math.Max(asize, bsize);
 			
 			switch (size)
 			{
 				case 1:
-					return Math.Lerp(av.X, bv.X, tv);
+					result = Math.Lerp(av.X, bv.X, tv);
+					return true;
 				case 2:
-					return Math.Lerp(av.XY, bv.XY, tv);
+					result = Math.Lerp(av.XY, bv.XY, tv);
+					return true;
 				case 3:
-					return Math.Lerp(av.XYZ, bv.XYZ, tv);
+					result = Math.Lerp(av.XYZ, bv.XYZ, tv);
+					return true;
 				case 4:
-					return Math.Lerp(av, bv, tv);
+					result = Math.Lerp(av, bv, tv);
+					return true;
 			}
 				
-			return null;
+			return false;
 		}
 		public override string ToString()
 		{
@@ -470,28 +457,31 @@ namespace Fuse.Reactive
 		public Clamp([UXParameter("First")] Expression first, 
 			[UXParameter("Second")] Expression second, 
 			[UXParameter("Third")] Expression third) : 
-			base(first, second, third) 
+			base(first, second, third, Flags.None) 
 		{ }
-		protected override object Compute(object a, object mn, object mx)
+		protected override bool TryCompute(object a, object mn, object mx, out object result)
 		{
+			result = null;
 			float4 av = float4(0);
 			float mxv = 0, mnv = 0;
 			int size = 0;
 			if (!Marshal.TryToZeroFloat4(a, out av, out size) ||
 				!Marshal.TryToType<float>(mn, out mnv) ||
 				!Marshal.TryToType<float>(mx, out mxv))
-				return null;
+				return false;
 			
 			if (size == 1)
-				return Math.Clamp(av.X, mnv, mxv);
-			if (size == 2)
-				return Math.Clamp(av.XY, mnv, mxv);
-			if (size == 3)
-				return Math.Clamp(av.XYZ, mnv, mxv);
-			if (size == 4)
-				return Math.Clamp(av, mnv, mxv);
+				result = Math.Clamp(av.X, mnv, mxv);
+			else if (size == 2)
+				result = Math.Clamp(av.XY, mnv, mxv);
+			else if (size == 3)
+				result = Math.Clamp(av.XYZ, mnv, mxv);
+			else if (size == 4)
+				result = Math.Clamp(av, mnv, mxv);
+			else
+				return false;
 				
-			return null;
+			return true;
 		}
 		public override string ToString()
 		{

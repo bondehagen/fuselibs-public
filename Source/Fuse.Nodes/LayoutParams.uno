@@ -194,6 +194,17 @@ namespace Fuse
 			RemoveSize( size.XY + size.ZW );
 		}
 		
+		public void RetainAxesXY( bool x, bool y )
+		{
+			RetainXY(x,y);
+			RetainMaxXY(x,y);
+		}
+		
+		/**
+			Retains or discards the X/Y information.
+			
+			Be careful when using this, it is typically used in combination with RetainMaxXY (or RetainAxesXY in combination), or with a ConstrainMax. The layout must consider how it affects not just the X/Y values, but also the Min/Max XY values.
+		*/
 		public void RetainXY( bool x, bool y )
 		{
 			if (!x)
@@ -286,7 +297,7 @@ namespace Fuse
 		public void ConstrainMinX( float min )
 		{
 			if (HasMinX)
-				_minSize.X = Math.Min(_minSize.X,min);
+				_minSize.X = Math.Max(_minSize.X,min);
 			else
 				_minSize.X = min;
 			SetFlag(Flags.MinX,true);
@@ -295,7 +306,7 @@ namespace Fuse
 		public void ConstrainMinY( float min )
 		{
 			if (HasMinY)
-				_minSize.Y = Math.Min(_minSize.Y,min);
+				_minSize.Y = Math.Max(_minSize.Y,min);
 			else
 				_minSize.Y = min;
 			SetFlag(Flags.MinY,true);
@@ -440,6 +451,17 @@ namespace Fuse
 			else
 				s += "*";
 	
+			s += "] Min=[";
+			if (HasMinX)
+				s += _minSize.X;
+			else
+				s += "*";
+			s += ",";
+			if (HasMinY)
+				s += _minSize.Y;
+			else
+				s += "*";
+				
 			s += "] Rel=[";
 			if (HasRelativeX)
 				s += RelativeX;

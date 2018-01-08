@@ -11,9 +11,9 @@ namespace Fuse
 		static Node()
 		{
 			ScriptClass.Register(typeof(Node),
-				new ScriptMethod<Node>("_createWatcher", _createWatcher, ExecutionThread.JavaScript),
-				new ScriptMethod<Node>("_destroyWatcher", _destroyWatcher, ExecutionThread.JavaScript),
-				new ScriptMethodInline("findData", ExecutionThread.JavaScript, "function(key) { return Observable._getDataObserver(this, key); }"));
+				new ScriptMethod<Node>("_createWatcher", _createWatcher),
+				new ScriptMethod<Node>("_destroyWatcher", _destroyWatcher),
+				new ScriptMethodInline("findData", "function(key) { return Observable._getDataObserver(this, key); }"));
 		}
 
 		static object _createWatcher(Context c, Node n, object[] args)
@@ -23,13 +23,15 @@ namespace Fuse
 			return new External(new DataWatcher(n, c, callback, key));			
 		}
 
-		static void _destroyWatcher(Context c, Node n, object[] args)
+		static object _destroyWatcher(Context c, Node n, object[] args)
 		{
 			if (args[0] != null)
 			{
 				var watcher = (DataWatcher)((External)args[0]).Object;
 				watcher.Dispose();
 			}
+
+			return null;
 		}
 
 		class DataWatcher: Node.DataFinder, IDataListener
@@ -72,12 +74,12 @@ namespace Fuse
 			protected override void Resolve(IObject provider, object data)
 			{
 				_data = data;
-				_context.Dispatcher.Invoke(Update);
+				_context.ThreadWorker.Invoke(Update);
 			}
 
-			void Update()
+			void Update(Scripting.Context context)
 			{
-				_updateCallback.Call(_context.Unwrap(_data));
+				_updateCallback.Call(context, context.Unwrap(_data));
 			}
 		}
 	}
