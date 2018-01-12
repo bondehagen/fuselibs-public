@@ -25,10 +25,12 @@ namespace Fuse.Net.Http
 		{
 			return _impl.GetBodyAsString();
 		}
+		
 		public byte[] GetBodyAsByteArray()
 		{
 			return _impl.GetBodyAsByteArray();
 		}
+
 		public IEnumerable<string> GetHeader(string key)
 		{
 			IEnumerable<string> ret;
@@ -82,21 +84,3 @@ namespace Fuse.Net.Http
 		}
 	}
 }
-
-/*HTTP message
-	HTTP request message
-		request-line
-			method
-			URI
-			protocol version
-		HeaderFields
-		MessageBody
-			payload body
-
-	HTTP response message
-		status-line
-			HTTP-version
-			status-code
-			reason-phrase
-		HeaderFields
-*/

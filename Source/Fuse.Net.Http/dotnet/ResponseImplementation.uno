@@ -20,11 +20,6 @@ namespace Fuse.Net.Http
 		{
 			return (int)_response.StatusCode;		
 		}
-
-		public IEnumerable<string> GetHeader(string key)
-		{
-			return new string[0];
-		}
 		
 		public IDictionary<string, IEnumerable<string>> GetHeaders()
 		{

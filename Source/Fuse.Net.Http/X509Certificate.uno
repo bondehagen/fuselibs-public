@@ -18,7 +18,6 @@ namespace Fuse.Security
 
 		static string LoadPem(string data)
 		{
-			// https://tls.mbed.org/kb/cryptography/asn1-key-structures-in-der-and-pem
 			var begin = "-----BEGIN CERTIFICATE-----";
 			var end = "-----END CERTIFICATE-----";
 			return data.Replace(begin, "").Replace(end, "").Replace("\n", "").Replace("\r", "");
@@ -123,11 +122,6 @@ namespace Fuse.Security
 			sb.AppendLine("-----END CERTIFICATE-----");
 			return  sb.ToString();
 		}
-	}
-
-	public class X509Chain
-	{
-
 	}
 
 	public enum SslPolicyErrors

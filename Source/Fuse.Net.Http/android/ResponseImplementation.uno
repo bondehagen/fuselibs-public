@@ -106,7 +106,7 @@ namespace Fuse.Net.Http
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-			return "";
+			return null;
 		@}
 
 		[Foreign(Language.Java)]
@@ -128,7 +128,7 @@ namespace Fuse.Net.Http
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-			return new ByteArray(0);
+			return null;
 		@}
 
 		[Foreign(Language.Java)]
@@ -138,10 +138,5 @@ namespace Fuse.Net.Http
 			//((HttpURLConnection)_urlConnection).disconnect();
 			//_urlConnection = null;
 		@}
-
-		~ResponseImplementation()
-		{
-			debug_log "ResponseImplementation destroyed";
-		}
 	}
 }

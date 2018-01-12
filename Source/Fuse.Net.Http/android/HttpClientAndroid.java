@@ -89,8 +89,6 @@ public abstract class HttpClientAndroid extends AsyncTask<URL, Integer, Long> {
 				connection.setReadTimeout(3000);
 
 				connection.setRequestMethod("GET");
-				// Already true by default but setting just in case; needs to be true since this request
-				// is carrying an input (response) body.
 				connection.setDoInput(true);
 
 				/*
@@ -106,10 +104,10 @@ public abstract class HttpClientAndroid extends AsyncTask<URL, Integer, Long> {
 						connection.connect();
 					} else {
 						HttpsURLConnection sslConnection = (HttpsURLConnection) connection;
+						final String requestedHost = url.getHost();
 						sslConnection.setHostnameVerifier(new HostnameVerifier(){
 							public boolean verify(String hostname, SSLSession session) {
-								System.out.println(hostname);
-								return true;
+								return requestedHost.equals(hostname);
 							}});
 						
 						javax.net.ssl.KeyManager[] keyManagers = null;
@@ -142,9 +140,6 @@ public abstract class HttpClientAndroid extends AsyncTask<URL, Integer, Long> {
 				} catch (KeyManagementException | NoSuchAlgorithmException e) {
 					e.printStackTrace();
 				}
-				//publishProgress(DownloadCallback.Progress.CONNECT_SUCCESS);
-
-				//publishProgress(DownloadCallback.Progress.GET_INPUT_STREAM_SUCCESS, 0);
 			} catch (Exception e) {
 				onFailure(e.getMessage());
 			} finally {
@@ -159,14 +154,10 @@ public abstract class HttpClientAndroid extends AsyncTask<URL, Integer, Long> {
 		return 0L;
 	}
 
-	// This is called each time you call publishProgress()
 	protected void onProgressUpdate(Integer... progress) {
-		//setProgressPercent(progress[0]);
 	}
 
-	// This is called when doInBackground() is finished
 	protected void onPostExecute(Long result) {
-		//showNotification("Downloaded " + result + " bytes");
 	}
 
 	public void AddClientCertificate(byte[] data, String password) {

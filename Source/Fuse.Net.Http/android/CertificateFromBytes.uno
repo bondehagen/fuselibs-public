@@ -59,7 +59,6 @@ namespace Fuse.Security
 			}
 			catch (Exception e)
 			{
-				// TODO: not sure how you want to return this
 				debug_log("Could not load certificate from byte\nReason: " + e.getMessage());
 				return null;
 			}

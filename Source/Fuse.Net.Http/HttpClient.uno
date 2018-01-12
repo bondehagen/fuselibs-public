@@ -20,12 +20,18 @@ namespace Fuse.Net.Http
 		{
 			ClientCertificates.Add(certificate);
 		}
+		
+		public NetworkProxy Proxy { get; set; }
+		public bool AutoRedirect { get; set; }
+		public int Timeout { get; set; }
 
 		public HttpClient()
 		{
 			debug_log "init HttpClient";
 			_impl = new HttpClientImplementation(this);
 			_clientCertificates = new List<X509Certificate>();
+			AutoRedirect = true;
+			Timeout = 5000;
 		}
 
 		public Future<Response> Send(Request request)
@@ -42,8 +48,7 @@ namespace Fuse.Net.Http
 
 		public Future<Response> SendAsync(Request request)
 		{
-			debug_log "Target not supported";
-			return null;
+			throw new Exception("Target not supported");
 		}
 	}
 }

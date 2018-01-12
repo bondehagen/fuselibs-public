@@ -75,7 +75,6 @@ namespace Foundation
 		{
 			get
 			{
-				//NSURLSession *session = [NSURLSession sharedSession];
 				return null;
 			}
 		}

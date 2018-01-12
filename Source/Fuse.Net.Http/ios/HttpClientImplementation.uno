@@ -26,7 +26,6 @@ namespace Fuse.Net.Http
 			return [[HttpClientObjc alloc] init];
 		@}
 
-		
 		public Future<Response> SendAsync(Request request)
 		{
 			_client = Create();

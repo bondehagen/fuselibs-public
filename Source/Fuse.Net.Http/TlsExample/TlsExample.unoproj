@@ -1,6 +1,7 @@
 {
   "Packages": [
   	"Fuse",
+    "FuseJS"
   ],
   "Projects": [
     "../Fuse.Net.Http.unoproj"
@@ -9,6 +10,5 @@
     "*",
     "certs/client/sender.pfx:Bundle",
     "certs/server/receiver.crt:Bundle",
-    "mitmproxy.pem:Bundle",
   ]
 }

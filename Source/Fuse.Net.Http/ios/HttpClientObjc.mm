@@ -173,6 +173,7 @@ didCompleteWithError:(NSError *)error
 		if (res)
 		{
 			completionHandler(NSURLSessionAuthChallengeUseCredential, [NSURLCredential credentialForTrust:challenge.protectionSpace.serverTrust]);
+			return;
 		}
 	}
 	NSURLSessionAuthChallengeDisposition disposition = NSURLSessionAuthChallengePerformDefaultHandling;

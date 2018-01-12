@@ -8,7 +8,6 @@ namespace Fuse.Net.Http
 	using System;
 	using System.Net;
 	using System.Net.Http;
-	//using System.Security.Authentication;
 	using System.Net.Security;
 	using System.Threading;
 	using System.Threading.Tasks;
@@ -23,13 +22,13 @@ namespace Fuse.Net.Http
 		{
 			_client = client;
 		}
-		class Proxy : System.Net.IWebProxy
+		class DotNetProxy : System.Net.IWebProxy
 		{
 			System.Uri _proxyAddress;
 			
 			public System.Net.ICredentials Credentials { get; set; }
 
-			public Proxy(string proxyAddress, int port)
+			public DotNetProxy(string proxyAddress, int port)
 			{
 				_proxyAddress = new UriBuilder("http", proxyAddress, port).Uri;
 			}
@@ -38,6 +37,7 @@ namespace Fuse.Net.Http
 			{
 				return _proxyAddress;
 			}
+
 			public bool IsBypassed(System.Uri host)
 			{
 				return false;
@@ -47,31 +47,17 @@ namespace Fuse.Net.Http
 		{
 			_promise = new Uno.Threading.Promise<Response>();
 
-			/*using (var handler = new WebRequestHandler())
-			{
-			    handler.ServerCertificateValidationCallback = ...
-
-			    using (var client = new HttpClient(handler))
-			    {
-			        ...
-			    }
-			}
-
-			httpClient.BaseAddress = new Uri("https://foobar.com/");
-			httpClient.DefaultRequestHeaders.Accept.Clear();
-			httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/xml"));*/
-
-			//specify to use TLS 1.2 as default connection
 			System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Default;
 
-			var handler = new HttpClientHandler()
+			var handler = new HttpClientHandler();
+            if (_client.Proxy != null)
             {
-                Proxy = new Proxy("192.168.1.233", 8080),
-                UseProxy = false,
-            };
-            handler.AllowAutoRedirect = true;
-            /*	
-			handler.ClientCertificateOptions = ClientCertificateOption.Manual;*/
+            	handler.Proxy = new DotNetProxy(_client.Proxy.Address.Host, _client.Proxy.Address.Port);
+            	handler.UseProxy = true;
+			}
+
+			// handler.ClientCertificateOptions = ClientCertificateOption.Manual;
+            handler.AllowAutoRedirect = _client.AutoRedirect;
 			
 			foreach (var cert in _client.ClientCertificates)
 			{
