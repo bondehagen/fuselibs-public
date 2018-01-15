@@ -38,6 +38,11 @@ namespace Fuse.Net.Http
 		{
 			return _impl.SendAsync(request);
 		}
+
+		public void AbortAllRequest()
+		{
+			debug_log "TODO: AbortAllRequest";
+		}
 	}
 
 	extern(!DOTNET && !iOS && !Android) class HttpClientImplementation

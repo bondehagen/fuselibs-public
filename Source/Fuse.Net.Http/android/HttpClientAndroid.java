@@ -52,7 +52,8 @@ public abstract class HttpClientAndroid extends AsyncTask<URL, Integer, Long> {
 		/*HttpsURLConnection.setDefaultHostnameVerifier();
 		  HttpsURLConnection.setDefaultSSLSocketFactory(context.getSocketFactory());
 		}*/
-
+		HttpURLConnection.setFollowRedirects(true);
+		HttpsURLConnection.setFollowRedirects(true);
 		try {
 			URL url = new URL(uri);
 			/*
@@ -90,7 +91,7 @@ public abstract class HttpClientAndroid extends AsyncTask<URL, Integer, Long> {
 
 				connection.setRequestMethod("GET");
 				connection.setDoInput(true);
-
+				connection.setInstanceFollowRedirects(true);
 				/*
 				// disable response caching
 						android.net.http.HttpResponseCache.setDefault(null);
