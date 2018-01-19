@@ -7,7 +7,7 @@ namespace UnoHttp
     {
         public Main() : base()
         {
-            var h = new HttpAPI("POST", "http://fusetools.com");
+            var h = new HttpAPI("POST", "http://192.168.1.187:300");
             h.SetTimeout(3000);
             h.EnableCache(true);
             h.SetHeader("x-test", "true");

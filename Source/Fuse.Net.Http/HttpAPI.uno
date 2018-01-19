@@ -13,7 +13,7 @@ namespace Fuse.Net.Http
         public HttpAPI(string method, string url)
         {
         	_client = new HttpClient();
-        	_client.Proxy = new NetworkProxy(new Uno.Net.Http.Uri("https://192.168.1.233:8080"));
+        	_client.Proxy = new NetworkProxy(new Uno.Net.Http.Uri("http://192.168.1.233:8080"));
         	_client.AutoRedirect = true;
         	_request = new Request(method, url);
         }

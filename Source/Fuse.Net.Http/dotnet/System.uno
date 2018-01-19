@@ -47,6 +47,7 @@ namespace System
 	extern(DOTNET) internal class Uri
 	{
 		public extern Uri(string s) {}
+		public extern string AbsoluteUri { get; }
 	}
 
 	[DotNetType("System.Exception")]

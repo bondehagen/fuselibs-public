@@ -28,18 +28,20 @@ namespace Fuse.Net.Http
 			
 			public System.Net.ICredentials Credentials { get; set; }
 
-			public DotNetProxy(string proxyAddress, int port)
+			public DotNetProxy(string protocol, string proxyAddress, int port)
 			{
-				_proxyAddress = new UriBuilder("http", proxyAddress, port).Uri;
+				_proxyAddress = new UriBuilder(protocol, proxyAddress, port).Uri;
 			}
 
 			public System.Uri GetProxy(System.Uri destination)
 			{
+				debug_log _proxyAddress.AbsoluteUri;
 				return _proxyAddress;
 			}
 
 			public bool IsBypassed(System.Uri host)
 			{
+				debug_log "IsBypassed";
 				return false;
 			}
 		}
@@ -52,7 +54,7 @@ namespace Fuse.Net.Http
 			var handler = new HttpClientHandler();
             if (_client.Proxy != null)
             {
-            	handler.Proxy = new DotNetProxy(_client.Proxy.Address.Host, _client.Proxy.Address.Port);
+            	handler.Proxy = new DotNetProxy(_client.Proxy.Address.Scheme, _client.Proxy.Address.Host, _client.Proxy.Address.Port);
             	handler.UseProxy = true;
 			}
 
