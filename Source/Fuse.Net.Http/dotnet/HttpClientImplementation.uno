@@ -51,7 +51,7 @@ namespace Fuse.Net.Http
 
 			System.Net.ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Default;
 
-			var handler = new HttpClientHandler();
+			var handler = new WebRequestHandler();
             if (_client.Proxy != null)
             {
             	handler.Proxy = new DotNetProxy(_client.Proxy.Address.Scheme, _client.Proxy.Address.Host, _client.Proxy.Address.Port);

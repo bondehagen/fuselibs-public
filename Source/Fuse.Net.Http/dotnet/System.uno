@@ -147,9 +147,9 @@ namespace System.Net.Http
 	}
 
 	[DotNetType("System.Net.Http.WebRequestHandler")]
-	extern(DOTNET && !HOST_MAC) internal class WebRequestHandler
+	extern(DOTNET && !HOST_MAC) internal class WebRequestHandler : HttpClientHandler
 	{
-
+		public extern System.Security.Cryptography.X509Certificates.X509CertificateCollection ClientCertificates { get; }
 	}
 	[DotNetType("System.Net.Http.HttpClientHandler")]
 	extern(DOTNET && !HOST_MAC) internal class HttpClientHandler
@@ -157,7 +157,6 @@ namespace System.Net.Http
 		public extern bool AllowAutoRedirect { get; set; }
 		public extern System.Net.IWebProxy Proxy { get; set; }
 		public extern bool UseProxy { get; set; }
-		public extern System.Security.Cryptography.X509Certificates.X509CertificateCollection ClientCertificates { get; }
 	}
 }
 namespace System.Net
