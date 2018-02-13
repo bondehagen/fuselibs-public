@@ -5,6 +5,7 @@
   ],
   "Includes": [
     "*",
+    "mono/XamMac/Xamarin.Mac.dll",
     //"msdnmicrosoftcom.der:Bundle",
     "android/HttpClientAndroid.java:Java:Android",
     "ios/HttpClientObjc.h:ObjCHeader:iOS",

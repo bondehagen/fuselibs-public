@@ -2,7 +2,4 @@
 	<Require Condition="!HOST_OSX" Assembly="System.Net.Http" />
 	<Require Condition="!HOST_OSX" Assembly="System.Net.Http.WebRequest" />
 	<Require Condition="HOST_OSX" Assembly="XamMac/Xamarin.Mac.dll" />
-	<!--<Require Condition="HOST_OSX" Assembly="XamMac/XamMac.dll" />
-	<CopyFile Condition="HOST_OSX" Name="XamMac/libxammac.dylib" TargetName="@(AssemblyDirectory)/libxammac.dylib" />-->
-
 </Extensions>

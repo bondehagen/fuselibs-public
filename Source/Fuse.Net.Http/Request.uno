@@ -21,8 +21,8 @@ namespace Fuse.Net.Http
 		{
 			if (Headers == null)
 				Headers = new Dictionary<string, IList<string>>();
-
-			//Headers.Add(name, new List() { value } );
+			
+			Headers.Add(name, new List() { value } );
 		}
 
 		public void SetBody(string data)

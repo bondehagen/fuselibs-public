@@ -26,9 +26,18 @@ namespace Fuse.Net.Http
 			
 			using (var configuration = NSUrlSessionConfiguration.DefaultSessionConfiguration)
 			{
-				if (request.Proxy != null)
+				if (_client.Proxy != null)
 				{
-					var enableProxy = 1;
+					var values = new NSObject[]
+					{
+						NSObject.FromObject(_client.Proxy.Address.Host),
+						NSNumber.FromInt32(_client.Proxy.Address.Port),
+						NSNumber.FromInt32(1),
+
+						NSObject.FromObject(_client.Proxy.Address.Host),
+						NSNumber.FromInt32(_client.Proxy.Address.Port),
+						NSNumber.FromInt32(1),
+					};
 					var keys = new NSObject[]
 					{
 						NSObject.FromObject("HTTPProxy"),
@@ -43,11 +52,12 @@ namespace Fuse.Net.Http
 					configuration.ConnectionProxyDictionary = proxyDict;
 				}
 				
-				_autoRedirect = request.AutoRedirect;
+				_autoRedirect = _client.AutoRedirect;
 
-				var c = _client.ClientCertificates[0];
-				if(c != null)
+				
+				if(_client.ClientCertificates != null && _client.ClientCertificates.Count > 0)
 				{
+					var c = _client.ClientCertificates[0];
 					var password = c.Password;
 					var certData = c.RawBytes;
 
@@ -55,6 +65,7 @@ namespace Fuse.Net.Http
 				}
 
 				var _session = NSUrlSession.FromConfiguration(configuration, this, null);
+				debug_log "ready to send";
 				var task = _session.CreateDataTask(nsUrlRequest, Callback);
 				task.Resume();
 			}
@@ -65,6 +76,7 @@ namespace Fuse.Net.Http
 		
 		void Callback(NSData data, NSUrlResponse urlResponse, NSError error) 
 		{
+			debug_log "callback";
 			try
 			{
 				if (urlResponse != null)
@@ -74,6 +86,7 @@ namespace Fuse.Net.Http
 				}
 				if (error != null)
 				{
+					debug_log "callback error";
 					_response.Reject(new Exception(error.ToString()));
 					return;
 				}
@@ -103,6 +116,7 @@ namespace Fuse.Net.Http
 
 		public override void DidReceiveChallenge(NSUrlSession session, NSUrlAuthenticationChallenge challenge, Action<NSUrlSessionAuthChallengeDisposition, NSUrlCredential> completionHandler)
 		{
+			debug_log "DidReceiveChallenge";
 			try 
 			{
 				var protectionSpace = challenge.ProtectionSpace;
@@ -110,43 +124,57 @@ namespace Fuse.Net.Http
 				
 				if (authenticationMethod == "NSURLAuthenticationMethodClientCertificate")
 				{
-					
-					if(_identity != null) {
+					if(_identity != null)
+					{
 						var trust = new SecTrust(_identity.Certificate, SecPolicy.CreateBasicX509Policy());
 						SecCertificate[] certificates = new SecCertificate[] { _identity.Certificate };
 						var credential = NSUrlCredential.FromIdentityCertificatesPersistance(_identity, certificates, NSUrlCredentialPersistence.ForSession);
 						//var credential = new NSUrlCredential(trust);
-						if(credential != null) {
+						if(credential != null)
+						{
 							completionHandler(NSUrlSessionAuthChallengeDisposition.UseCredential, credential);
 							return;
 						}
 					}
 				}
-				if (_client.ServerCertificateValidationCallback != null)
+				else if(authenticationMethod == "NSURLAuthenticationMethodServerTrust")
 				{
-					// Get remote certificate
-					var serverTrust = protectionSpace.ServerSecTrust; // contains the server's SSL certificate data
-					var certificate = serverTrust[0];
-
-					var x509 = certificate.ToX509Certificate2();
-					var c = new Fuse.Security.X509Certificate(x509.RawData);
-					var result = _client.ServerCertificateValidationCallback(c, (Fuse.Security.SslPolicyErrors)(int)0);
-					if (result)
+					if (_client.ServerCertificateValidationCallback != null)
 					{
-						if(protectionSpace.AuthenticationMethod == "NSURLAuthenticationMethodServerTrust")
+						// Get remote certificate
+						var serverTrust = protectionSpace.ServerSecTrust; // contains the server's SSL certificate data
+						var certificate = serverTrust[0];
+
+						// var hostname = challenge.ProtectionSpace.Host;
+						var x509 = certificate.ToX509Certificate2();
+						var c = new Fuse.Security.X509Certificate(x509.RawData);
+						var result = _client.ServerCertificateValidationCallback(c, (Fuse.Security.SslPolicyErrors)(int)0);
+						if (result)
 						{
-							//if(challenge.ProtectionSpace.Host == "uno-http-testing.azurewebsites.net")
-							//{
-								var credential = NSUrlCredential.FromTrust(protectionSpace.ServerSecTrust);
-								completionHandler(NSUrlSessionAuthChallengeDisposition.UseCredential, credential);
-								return;
-							//}
+							var credential = NSUrlCredential.FromTrust(protectionSpace.ServerSecTrust);
+							completionHandler(NSUrlSessionAuthChallengeDisposition.UseCredential, credential);
+							return;
 						}
 					}
+					else
+					{
+						// default behaviour
+						completionHandler(NSUrlSessionAuthChallengeDisposition.PerformDefaultHandling, null);
+						return;
+					}
 				}
+				else
+				{
+					debug_log "can this happen?";
+					completionHandler(NSUrlSessionAuthChallengeDisposition.PerformDefaultHandling, null);
+					return;
+				}
+
+
 			} catch (Exception e)
 			{
 				debug_log e.Message;
+				debug_log e.StackTrace;
 			}
 
 			completionHandler(NSUrlSessionAuthChallengeDisposition.CancelAuthenticationChallenge, null);

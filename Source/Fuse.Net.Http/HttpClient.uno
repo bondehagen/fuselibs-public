@@ -36,6 +36,7 @@ namespace Fuse.Net.Http
 
 		public Future<Response> Send(Request request)
 		{
+			debug_log "send";
 			return _impl.SendAsync(request);
 		}
 

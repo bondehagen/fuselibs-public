@@ -62,7 +62,7 @@ namespace Foundation
 		public extern virtual string HttpMethod { get; set; }
 		//public virtual NSData Body { get; set; }
 		//public virtual NSInputStream BodyStream { get; set; }
-		//public virtual NSDictionary Headers { get; set; }
+		public virtual NSDictionary Headers { get; set; }
 		// public String this [String key] { get; set; }
 		// public virtual Boolean ShouldHandleCookies { get; set; }
 	}
