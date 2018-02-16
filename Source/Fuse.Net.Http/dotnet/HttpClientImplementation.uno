@@ -45,6 +45,7 @@ namespace Fuse.Net.Http
 				return false;
 			}
 		}
+
 		public Uno.Threading.Future<Response> SendAsync(Request request)
 		{
 			_promise = new Uno.Threading.Promise<Response>();
@@ -74,11 +75,38 @@ namespace Fuse.Net.Http
 			{
 				ServicePointManager.ServerCertificateValidationCallback = Validate;
 			}
-			var task = client.SendAsync(new HttpRequestMessage(HttpMethod.Get, request.Url), HttpCompletionOption.ResponseHeadersRead, token);
+			var dotnetRequest = new HttpRequestMessage(GetMethodFromString(request.Method), request.Url);
+			if (request.Data != null)
+				dotnetRequest.Content = new ByteArrayContent(request.Data);
+
+			foreach(var h in request.Headers)
+			{
+				dotnetRequest.Headers.Add(h.Key, h.Value);
+			}
+
+			var task = client.SendAsync(dotnetRequest, HttpCompletionOption.ResponseHeadersRead, token);
 			task.ContinueWith(Continue);
 			//request.Dispose();
 
 			return _promise;
+		}
+
+		HttpMethod GetMethodFromString(string method)
+		{
+			if (method.ToUpper() == "POST") {
+				return  HttpMethod.Post;
+			} else if (method.ToUpper() == "DELETE") {
+				return  HttpMethod.Delete;
+			} else if (method.ToUpper() == "HEAD") {
+				return  HttpMethod.Head;
+			} else if (method.ToUpper() == "OPTIONS") {
+				return  HttpMethod.Options;
+			} else if (method.ToUpper() == "PUT") {
+				return  HttpMethod.Put;
+			} else if (method.ToUpper() == "TRACE") {
+				return HttpMethod.Trace;
+			}
+			return HttpMethod.Get;
 		}
 
 		void Continue(Task<HttpResponseMessage> task)

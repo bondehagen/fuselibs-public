@@ -27,12 +27,12 @@ namespace Fuse.Net.Http
 
 		public void SetBody(string data)
 		{
-
+			SetBody(Uno.Text.Utf8.GetBytes(data));
 		}
-
+		internal byte[] Data;
 		public void SetBody(byte[] data)
 		{
-			
+			Data = data;
 		}
 	}
 }

@@ -103,6 +103,8 @@ namespace System.Net.Http
 	extern(DOTNET && !HOST_MAC) internal class HttpRequestMessage
 	{
 		public extern HttpRequestMessage(HttpMethod method, string uri);
+		public extern HttpContent Content { get; set; }
+		public extern HttpHeaders Headers { get; }
 	}
 	[DotNetType("System.Net.Http.HttpMethod")]
 	extern(DOTNET && !HOST_MAC) internal class HttpMethod
@@ -133,6 +135,7 @@ namespace System.Net.Http
 	[DotNetType("System.Net.Http.Headers.HttpHeaders")]
 	extern(DOTNET && !HOST_MAC) internal class HttpHeaders
 	{
+		public extern void Add(string key, IEnumerable<string> values);
 		public extern bool TryGetValues(string name, out IEnumerable<string> values);
 		public extern override string ToString();
 	}
@@ -145,7 +148,15 @@ namespace System.Net.Http
 		//public Task<Stream> ReadAsStreamAsync();
 		public extern System.Threading.Tasks.Task<string> ReadAsStringAsync();
 	}
-
+	[DotNetType("System.Net.Http.StreamContent")]
+	extern(DOTNET && !HOST_MAC) public class StreamContent : HttpContent
+	{
+	}
+	[DotNetType("System.Net.Http.ByteArrayContent")]
+	extern(DOTNET && !HOST_MAC) public class ByteArrayContent : HttpContent
+	{
+		public extern ByteArrayContent(byte[] data);
+	}
 	[DotNetType("System.Net.Http.WebRequestHandler")]
 	extern(DOTNET && !HOST_MAC) internal class WebRequestHandler : HttpClientHandler
 	{
