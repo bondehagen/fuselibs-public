@@ -32,7 +32,7 @@ namespace Foundation
 	}
 	
 	[DotNetType("Foundation.NSDictionary")]
-	extern(DOTNET && HOST_MAC) public class NSDictionary : NSObject
+	extern(DOTNET && HOST_MAC) public class NSDictionary : Uno.Collections.Dictionary<Object, Object>
 	{
 		public extern static NSDictionary FromObjectAndKey(NSObject obj, string key);
 		public extern static NSDictionary FromObjectsAndKeys(NSObject[] objects, NSObject[] keys);

@@ -54,8 +54,13 @@ namespace Fuse.Net.Http
 				
 				_autoRedirect = _client.AutoRedirect;
 
+				var dict = new Uno.Collections.Dictionary<Object, Object>();
+				foreach(var h in request.Headers)
+					dict.Add(h.Key, h.Value[0]); // TODO: Support multiple values
+
+				nsUrlRequest.Headers = (NSDictionary)dict;
 				
-				if(_client.ClientCertificates != null && _client.ClientCertificates.Count > 0)
+				if (_client.ClientCertificates != null && _client.ClientCertificates.Count > 0)
 				{
 					var c = _client.ClientCertificates[0];
 					var password = c.Password;
