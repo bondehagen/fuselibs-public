@@ -20,7 +20,8 @@ namespace Fuse.Net.Http
 		public Uno.Threading.Future<Response> SendAsync(Request request)
 		{
 			_promise = new Uno.Threading.Promise<Response>();
-			Java.Object client = connect(request.Url, Continue, Fail, ServerCertificateValidationCallback);
+			Java.Object client = connect(request.Url, request.Method, ForeignHttpHeaderBridge.FromDictionaryToMap(request.Headers),
+				_client.AutoRedirect, _client.Proxy.Address.Host, _client.Proxy.Address.Port, _client.Timeout, request.EnableCache, Continue, Fail, ServerCertificateValidationCallback);
 			
 			foreach (var cert in _client.ClientCertificates)
 			{
@@ -35,11 +36,18 @@ namespace Fuse.Net.Http
 		@{
 			((HttpClientAndroid)client).AddClientCertificate(buf.copyArray(), pass);
 		@}
+		
+		/*[Foreign(Language.Java)]
+		public void Cancel(Java.Object client)
+		@{
+			((HttpClientAndroid)client).cancel();
+		@}*/
 
 		[Foreign(Language.Java)]
-		Java.Object connect(string uri, Action<Java.Object> cont, Action<string> fail, Func<byte[], bool, bool> serverCertificateValidationCallback)
+		Java.Object connect(string url, string httpMethod, Java.Object headers, bool followRedirects, string proxyAddress, int proxyPort, int timeout, bool enableCache,
+			Action<Java.Object> cont, Action<string> fail, Func<byte[], bool, bool> serverCertificateValidationCallback)
 		@{
-			HttpClientAndroid client = new HttpClientAndroid() {
+			HttpClientAndroid client = new HttpClientAndroid(url, httpMethod, (java.util.Map<String, java.util.List<String>>)headers, followRedirects, proxyAddress, proxyPort, timeout, enableCache) {
 				@Override
 				public void onHeadersReceived(HttpURLConnection urlConnection) {
 					cont.run(urlConnection);
@@ -53,7 +61,7 @@ namespace Fuse.Net.Http
 					return serverCertificateValidationCallback.run(new com.uno.ByteArray(asn1derEncodedCert.get(0)), chainError);
 				}
 			};
-			client.createRequest(uri, "", "", 0);
+			client.execute();
 			return client;
 		@}
 

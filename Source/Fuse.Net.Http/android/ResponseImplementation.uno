@@ -31,10 +31,7 @@ namespace Fuse.Net.Http
 
 		public IDictionary<string, IEnumerable<string>> GetHeaders()
 		{
-			var a = new MapToDictionary(GetHeaderFields());
-			var items = a.Get();
-			_statusLine = a.GetStatus();
-			return items;
+			return ForeignHttpHeaderBridge.FromMapToDictionary(GetHeaderFields());
 		}
 
 		[Foreign(Language.Java)]
@@ -43,49 +40,6 @@ namespace Fuse.Net.Http
 			HttpURLConnection connection = (HttpURLConnection)@{ResponseImplementation:Of(_this)._urlConnection:Get()};
 			return connection.getHeaderFields();
 		@}
-
-		class MapToDictionary
-		{
-			IDictionary<string, IEnumerable<string>> _dict;
-
-			public MapToDictionary(Java.Object map)
-			{
-				_dict = new Dictionary<string, IEnumerable<string>>();
-				ForeignLoop(map, Add, SetStatus);
-			}
-
-			[Foreign(Language.Java)]
-			void ForeignLoop(Java.Object omap, Action<string, string[]> add, Action<string> setStatus)
-			@{
-				java.util.Map<String, java.util.List<String>> m =  (java.util.Map<String, java.util.List<String>>)omap;
-				for (java.util.Map.Entry<String, java.util.List<String>> k : m.entrySet()) {
-					String key = k.getKey();
-					if (key == null)
-						setStatus.run(k.getValue().get(0));
-					else
-						add.run(key, new StringArray(k.getValue().toArray(new String[0])));
-				}
-			@}
-			string _statusLine;
-			void SetStatus(string key)
-			{
-				_statusLine = key;
-			}
-
-			void Add(string key, string[] values)
-			{
-				_dict.Add(key, values);
-			}
-			public string GetStatus()
-			{
-				return _statusLine;
-			}
-
-			public IDictionary<string, IEnumerable<string>> Get()
-			{
-				return _dict;
-			}
-		}
 
 		[Foreign(Language.Java)]
 		public string GetBodyAsString()

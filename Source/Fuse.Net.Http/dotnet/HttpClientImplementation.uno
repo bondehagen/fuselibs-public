@@ -68,6 +68,7 @@ namespace Fuse.Net.Http
 			}
 
 			var client = new System.Net.Http.HttpClient(handler);
+			//client.Timeout = TimeSpan.FromMilliseconds(_client.Timeout);
 
 			var source = new CancellationTokenSource();
 			var token = source.Token;
