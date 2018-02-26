@@ -6,7 +6,7 @@
   "Includes": [
     "*",
     //"msdnmicrosoftcom.der:Bundle",
-    "android/HttpClientAndroid.java:Java:Android",
+    "android/*.java:Java:Android",
     "ios/HttpClientObjc.h:ObjCHeader:iOS",
     "ios/HttpClientObjc.mm:ObjCSource:iOS"
   ]

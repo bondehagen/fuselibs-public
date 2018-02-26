@@ -34,100 +34,75 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 
+import android.util.Log;
 import android.net.http.X509TrustManagerExtensions;
 import android.support.annotation.NonNull;
 
 
-public abstract class HttpClientAndroid extends AsyncTask<Void, Void, Long> {
+public class HttpClientAndroid extends AsyncTask<Void, Void, Long> {
 
-    private byte[] _clientCertificate;
-    private String _clientCertificatePassword;
+    private HttpMessage message;
 
-    private String _url;
-    private String _httpMethod;
-    private boolean _followRedirects;
-    private String _proxyAddress;
-    private int _proxyPort;
-    private int _timeout;
-    private Map<String, List<String>> _headers;
-    private boolean _enableCache;
+    public HttpClientAndroid(HttpMessage message) {
 
-    public abstract void onHeadersReceived(HttpURLConnection urlConnection);
-
-    public abstract void onFailure(String response);
-
-    public abstract boolean onCheckServerTrusted(List<byte[]> asn1derEncodedCert, boolean chainError);
-
-
-    public HttpClientAndroid(String url, String httpMethod, Map<String, List<String>> headers, boolean followRedirects, String proxyAddress, int proxyPort, int timeout, boolean enableCache) {
-        _url = url;
-        _httpMethod = httpMethod;
-        _headers = headers;
-        _followRedirects = followRedirects;
-        _proxyPort = proxyPort;
-        _timeout = timeout;
-        _proxyAddress = proxyAddress;
-        _enableCache = enableCache;
+        this.message = message;
     }
 
     protected Long doInBackground(Void... args) {
+        /*HttpsURLConnection.setDefaultHostnameVerifier();
+          HttpsURLConnection.setDefaultSSLSocketFactory(context.getSocketFactory());
+        }*/
+
+        // TODO: READ https://stackoverflow.com/questions/1936872/how-to-keep-multiple-java-httpconnections-open-to-same-destination/1936965#1936965
+        HttpURLConnection connection = null;
+
         try {
-            /*HttpsURLConnection.setDefaultHostnameVerifier();
-              HttpsURLConnection.setDefaultSSLSocketFactory(context.getSocketFactory());
-            }*/
+            Proxy proxy = Proxy.NO_PROXY;
+            if (this.message.getProxyAddress() != null)
+                proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(this.message.getProxyAddress(), this.message.getProxyPort()));
 
-            // TODO: READ https://stackoverflow.com/questions/1936872/how-to-keep-multiple-java-httpconnections-open-to-same-destination/1936965#1936965
-            HttpURLConnection connection = null;
-            try {
-                Proxy proxy = Proxy.NO_PROXY;
-                if (_proxyAddress != null)
-                    proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(_proxyAddress, _proxyPort));
+            URL url = new URL(this.message.getUrl());
+            connection = (HttpURLConnection) url.openConnection(proxy);
+            connection.setConnectTimeout(this.message.getTimeout());
+            connection.setReadTimeout(this.message.getTimeout());
+            connection.setUseCaches(this.message.enableCache());
+            connection.setRequestMethod(this.message.getHttpMethod());
+            //connection.setDoOutput(hasPayload);
+            connection.setDoInput(true);
+            connection.setInstanceFollowRedirects(this.message.followRedirects());
 
-                URL url = new URL(_url);
-                connection = (HttpURLConnection) url.openConnection(proxy);
+            // the following does not work!!
+            System.setProperty("http.keepAlive", "false");
 
-                connection.setConnectTimeout(_timeout);
-                connection.setReadTimeout(_timeout);
-                connection.setUseCaches(_enableCache);
-                connection.setRequestMethod(_httpMethod);
-                //connection.setDoOutput(hasPayload);
-                connection.setDoInput(true);
-                connection.setInstanceFollowRedirects(_followRedirects);
-
-                // the following does not work!!
-                System.setProperty("http.keepAlive", "false");
-                connection.setRequestProperty("Accept-Encoding", null);
-                connection.setRequestProperty("User-Agent", null);
-                connection.setRequestProperty("Connection", null);
-
-                for (Map.Entry<String, List<String>> entry : _headers.entrySet()) {
-                    for(String value : entry.getValue())
-                        connection.addRequestProperty(entry.getKey(), value);
-                }
-
-                if (connection instanceof HttpsURLConnection) {
-                    HttpsURLConnection sslConnection = configureSecureConnection((HttpsURLConnection)connection);
-                    sslConnection.connect();
-                } else {
-                    connection.connect();
-                }
-                onHeadersReceived(connection);
-
-            } catch (KeyManagementException | NoSuchAlgorithmException e) {
-                e.printStackTrace();
-            } catch(SocketTimeoutException e) {
-                //onTimeout();
-            } catch (Exception e) {
-                onFailure(e.getMessage());
-            } finally {
-                if (connection != null) {
-                    connection.disconnect();
+            /*connection.setRequestProperty("Accept-Encoding", "");
+            connection.setRequestProperty("User-Agent", "");
+            connection.setRequestProperty("Connection", "close"); //Keep-Alive*/
+            for (Map.Entry<String, List<String>> entry : this.message.getHeaders().entrySet()) {
+                for(String value : entry.getValue()) {
+                    connection.addRequestProperty(entry.getKey(), value);
                 }
             }
-        } catch (Exception e) {
-            onFailure(e.getMessage());
-        }
 
+            if (connection instanceof HttpsURLConnection) {
+                HttpsURLConnection sslConnection = configureSecureConnection((HttpsURLConnection)connection);
+                sslConnection.connect();
+            } else {
+                connection.connect();
+            }
+
+            this.message.onHeadersReceived(connection);
+        } catch (KeyManagementException | NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch(SocketTimeoutException e) {
+            this.message.onTimeout(e.getMessage());
+        } catch (Exception e) {
+            this.message.onFailure(e.getMessage());
+             e.printStackTrace();
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
         return 0L;
     }
 
@@ -142,7 +117,7 @@ public abstract class HttpClientAndroid extends AsyncTask<Void, Void, Long> {
 
         javax.net.ssl.KeyManager[] keyManagers = null;
         KeyStore keyStore = null;
-        if (_clientCertificate != null) {
+        /*if (this.message._clientCertificate != null) {
             InputStream fis =  new ByteArrayInputStream(_clientCertificate);
             keyStore = KeyStore.getInstance("PKCS12");
             keyStore.load(fis, _clientCertificatePassword.toCharArray());
@@ -150,7 +125,7 @@ public abstract class HttpClientAndroid extends AsyncTask<Void, Void, Long> {
             javax.net.ssl.KeyManagerFactory kmf = javax.net.ssl.KeyManagerFactory.getInstance("X509");
             kmf.init(keyStore, _clientCertificatePassword.toCharArray());
             keyManagers = kmf.getKeyManagers();
-        }
+        }*/
         TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
         tmf.init(keyStore);
 
@@ -173,8 +148,8 @@ public abstract class HttpClientAndroid extends AsyncTask<Void, Void, Long> {
     }
 
     public void AddClientCertificate(byte[] data, String password) {
-        _clientCertificate = data;
-        _clientCertificatePassword = password;
+        //_clientCertificate = data;
+        //_clientCertificatePassword = password;
     }
 
     class CustomX509TrustManager implements X509TrustManager {
@@ -217,7 +192,7 @@ public abstract class HttpClientAndroid extends AsyncTask<Void, Void, Long> {
                 encodedChain.add(trustedCert.getEncoded());
             }
 
-            boolean trusted = onCheckServerTrusted(encodedChain, chainError);
+            boolean trusted = message.onCheckServerTrusted(encodedChain, chainError);
             if (!trusted)
                 throw new CertificateException("Validation procedure trust certificate");
         }

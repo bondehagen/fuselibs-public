@@ -28,10 +28,11 @@ namespace Fuse.Net.Http
 		public HttpClient()
 		{
 			debug_log "init HttpClient";
-			_impl = new HttpClientImplementation(this);
-			_clientCertificates = new List<X509Certificate>();
 			AutoRedirect = true;
 			Timeout = 5000;
+			_clientCertificates = new List<X509Certificate>();
+			
+			_impl = new HttpClientImplementation(this);
 		}
 
 		public Future<Response> Send(Request request)
