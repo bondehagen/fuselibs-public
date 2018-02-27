@@ -53,6 +53,8 @@ namespace Foundation
 	[DotNetType("Foundation.NSUrlRequest")]
 	extern(DOTNET && HOST_MAC) internal class NSUrlRequest
 	{
+		// https://developer.xamarin.com/api/type/Foundation.NSUrlRequest/
+		public extern virtual NSUrl Url { get; }
 	}
 	
 	[DotNetType("Foundation.NSMutableUrlRequest")]
@@ -61,8 +63,9 @@ namespace Foundation
 		public extern NSMutableUrlRequest(NSUrl url);
 		public extern virtual string HttpMethod { get; set; }
 		//public virtual NSData Body { get; set; }
-		//public virtual NSInputStream BodyStream { get; set; }
+		public virtual NSInputStream BodyStream { get; set; }
 		public virtual NSDictionary Headers { get; set; }
+			//CachePolicy = NSUrlRequestCachePolicy.UseProtocolCachePolicy,
 		// public String this [String key] { get; set; }
 		// public virtual Boolean ShouldHandleCookies { get; set; }
 	}
@@ -71,29 +74,22 @@ namespace Foundation
 	extern(DOTNET && HOST_MAC) internal class NSUrlSession
 	{
 		public extern static NSUrlSession FromConfiguration(NSUrlSessionConfiguration configuration, NSUrlSessionDelegate urlSessionDelegate, object delegateQueue);
-		public static NSUrlSession SharedSession
+		/*public static NSUrlSession SharedSession
 		{
 			get
 			{
 				return null;
 			}
-		}
+		}*/
 
-		public virtual NSUrlSessionDataTask CreateDataTask(NSUrlRequest request, NSUrlSessionResponse completionHandler)
-		{
-			 return null;
-		}
+		public extern virtual NSUrlSessionDataTask CreateDataTask(NSUrlRequest request, NSUrlSessionResponse completionHandler);
+		public extern virtual NSUrlSessionDataTask CreateDataTask(NSUrlRequest request);
 	}
 
 	[DotNetType("Foundation.NSUrlSessionResponse")]
 	extern(DOTNET && HOST_MAC) internal delegate void NSUrlSessionResponse(NSData data, NSUrlResponse response, NSError error);
 
-	[DotNetType("Foundation.NSUrlSessionDataTask")]
-	extern(DOTNET && HOST_MAC) internal class NSUrlSessionDataTask
-	{
-		public extern void Resume();
-		public extern void Cancel();
-	}
+
 
 	[DotNetType("Foundation.NSUrlResponse")]
 	extern(DOTNET && HOST_MAC) internal class NSUrlResponse
@@ -105,10 +101,20 @@ namespace Foundation
 		public extern int StatusCode { get; }
 		public extern NSDictionary AllHeaderFields { get; }
 	}
- 
+
+ 	[DotNetType("Foundation.NSInputStream")]
+	extern(DOTNET && HOST_MAC) internal class NSInputStream
+	{
+		//public NSInputStream (NSData data)
+		//HasBytesAvailable() : Boolean
+		//Read(Byte[], UInt32) : Int32
+	}
+
 	[DotNetType("Foundation.NSError")]
 	extern(DOTNET && HOST_MAC) internal class NSError
-	{}
+	{
+		public extern virtual string LocalizedFailureReason { get; }
+	}
 
 	[DotNetType("Foundation.NSData")]
 	extern(DOTNET && HOST_MAC) public class NSData
@@ -122,12 +128,28 @@ namespace Foundation
 	{
 		public extern static NSUrlSessionConfiguration DefaultSessionConfiguration { get; }
 		public extern virtual NSDictionary ConnectionProxyDictionary { get; set; }
+		public extern virtual bool HttpShouldUsePipelining { get; set; }
 	}
 
 	[DotNetType("Foundation.NSUrlSessionTask")]
 	extern(DOTNET && HOST_MAC) internal class NSUrlSessionTask
-	{}
+	{
+		//https://developer.xamarin.com/api/type/Foundation.NSUrlSessionTask/
+		public extern void Resume();
+		public extern void Cancel();
+	}
 
+	[DotNetType("Foundation.NSUrlSessionDataTask")]
+	extern(DOTNET && HOST_MAC) internal class NSUrlSessionDataTask : NSUrlSessionTask
+	{}
+	
+	[DotNetType("Foundation.NSUrlSessionStreamTask")]
+	extern(DOTNET && HOST_MAC) internal class NSUrlSessionStreamTask :  NSUrlSessionTask
+	{
+		public extern virtual void CaptureStreams();
+		// more methods https://developer.xamarin.com/api/type/Foundation.NSUrlSessionStreamTask/
+	}
+	
 	[DotNetType("Foundation.NSUrlSessionDelegate")]
 	extern(DOTNET && HOST_MAC) internal class NSUrlSessionDelegate
 	{
@@ -142,12 +164,42 @@ namespace Foundation
 	[DotNetType("Foundation.NSUrlSessionTaskDelegate")]
 	extern(DOTNET && HOST_MAC) internal class NSUrlSessionTaskDelegate : NSUrlSessionDelegate
 	{
+		// https://developer.xamarin.com/api/type/Foundation.NSUrlSessionTaskDelegate/
+		public extern virtual void DidCompleteWithError (NSUrlSession session, NSUrlSessionTask task, NSError error);
+		public extern virtual void DidSendBodyData (NSUrlSession session, NSUrlSessionTask task, int bytesSent, int totalBytesSent, int totalBytesExpectedToSend);
 		public extern virtual void WillPerformHttpRedirection(NSUrlSession session, NSUrlSessionTask task,
 			NSHttpUrlResponse response, NSUrlRequest newRequest, Action<NSUrlRequest> completionHandler);
 	}
 	[DotNetType("Foundation.NSUrlSessionDataDelegate")]
 	extern(DOTNET && HOST_MAC) internal class NSUrlSessionDataDelegate : NSUrlSessionTaskDelegate
 	{
+		public extern virtual void DidBecomeStreamTask(NSUrlSession session, NSUrlSessionDataTask dataTask, NSUrlSessionStreamTask streamTask);
+		public extern virtual void DidReceiveData(NSUrlSession session, NSUrlSessionDataTask dataTask, NSData data);
+		public extern virtual void DidReceiveResponse(NSUrlSession session, NSUrlSessionDataTask dataTask, NSUrlResponse response, Action<NSUrlSessionResponseDisposition> completionHandler);
+		public extern virtual void WillCacheResponse(NSUrlSession session, NSUrlSessionDataTask dataTask, NSCachedUrlResponse proposedResponse, Action<NSCachedUrlResponse> completionHandler);
+	}
+
+	[DotNetType("Foundation.NSUrlSessionResponseDisposition")]
+	internal enum NSUrlSessionResponseDisposition : long
+	{
+		Cancel = 0l,
+		Allow,
+		BecomeDownload,
+		BecomeStream
+	}
+	
+	[DotNetType("Foundation.NSCachedUrlResponse")]
+	extern(DOTNET && HOST_MAC) internal class NSCachedUrlResponse
+	{
+		public extern virtual NSUrlCacheStoragePolicy StoragePolicy { get; }
+	}
+
+	[DotNetType("Foundation.NSUrlCacheStoragePolicy")]
+	extern(DOTNET && HOST_MAC) internal enum NSUrlCacheStoragePolicy : ulong
+	{
+		Allowed = 0ul,
+		AllowedInMemoryOnly,
+		NotAllowed
 	}
 
 	[DotNetType("Foundation.NSUrlAuthenticationChallenge")]

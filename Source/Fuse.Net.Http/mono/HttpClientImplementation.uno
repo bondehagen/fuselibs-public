@@ -58,7 +58,7 @@ namespace Fuse.Net.Http
 				foreach(var h in request.Headers)
 					dict.Add(h.Key, h.Value[0]); // TODO: Support multiple values
 
-				nsUrlRequest.Headers = (NSDictionary)dict;
+				//todo: nsUrlRequest.Headers = (NSDictionary)dict;
 				
 				if (_client.ClientCertificates != null && _client.ClientCertificates.Count > 0)
 				{
@@ -68,10 +68,11 @@ namespace Fuse.Net.Http
 
 					_identity = SecIdentity.Import(certData, password);
 				}
-
+				configuration.HttpShouldUsePipelining = false;
 				var _session = NSUrlSession.FromConfiguration(configuration, this, null);
 				debug_log "ready to send";
-				var task = _session.CreateDataTask(nsUrlRequest, Callback);
+				//var task = _session.CreateDataTask(nsUrlRequest, Callback);
+				var task = _session.CreateDataTask(nsUrlRequest);
 				task.Resume();
 			}
 			return _response;
@@ -105,18 +106,59 @@ namespace Fuse.Net.Http
 		
 		public override void DidBecomeInvalid(NSUrlSession session, NSError error)
 		{
+			debug_log "DidBecomeInvalid";
 		}
 
-		public override void DidFinishEventsForBackgroundSession(NSUrlSession session)
+		/*public override void DidFinishEventsForBackgroundSession(NSUrlSession session)
 		{
+			debug_log "DidFinishEventsForBackgroundSession";
+		}*/
+
+		public override void DidBecomeStreamTask(NSUrlSession session, NSUrlSessionDataTask dataTask, NSUrlSessionStreamTask streamTask)
+		{
+			debug_log "DidBecomeStreamTask";
 		}
-		
+		public override void DidReceiveData(NSUrlSession session, NSUrlSessionDataTask dataTask, NSData data)
+		{
+			debug_log "DidReceiveData";
+			// will be called until all data is received
+		}
+		public override void DidReceiveResponse(NSUrlSession session, NSUrlSessionDataTask dataTask, NSUrlResponse response, Action<NSUrlSessionResponseDisposition> completionHandler)
+		{
+			debug_log "DidReceiveResponse";
+			//completionHandler(NSUrlSessionResponseDisposition.Allow); // this will call DidReceiveData next
+			completionHandler(NSUrlSessionResponseDisposition.BecomeStream);
+		}
+
 		public override void WillPerformHttpRedirection(NSUrlSession session, NSUrlSessionTask task, NSHttpUrlResponse response, NSUrlRequest newRequest, Action<NSUrlRequest> completionHandler)
 		{
+			debug_log "WillPerformHttpRedirection " + newRequest.Url.AbsoluteString;
 			if (response == null || _autoRedirect)
 				completionHandler(newRequest);
 			else
 				completionHandler(null);
+		}
+		
+		public override void WillCacheResponse(NSUrlSession session, NSUrlSessionDataTask dataTask, NSCachedUrlResponse proposedResponse, Action<NSCachedUrlResponse> completionHandler)
+		{
+			debug_log "WillCacheResponse " + proposedResponse.StoragePolicy;
+		}
+
+		public override void DidCompleteWithError (NSUrlSession session, NSUrlSessionTask task, NSError error) 
+		{
+			if(error == null) {
+				return;
+			}
+			debug_log "DidCompleteWithError";
+			debug_log error.LocalizedFailureReason;
+			debug_log error.ToString();
+			debug_log task.GetType();
+			debug_log "---";
+		}
+		
+		public override void DidSendBodyData (NSUrlSession session, NSUrlSessionTask task, int bytesSent, int totalBytesSent, int totalBytesExpectedToSend)
+		{
+			debug_log "DidSendBodyData";
 		}
 
 		public override void DidReceiveChallenge(NSUrlSession session, NSUrlAuthenticationChallenge challenge, Action<NSUrlSessionAuthChallengeDisposition, NSUrlCredential> completionHandler)
@@ -126,7 +168,7 @@ namespace Fuse.Net.Http
 			{
 				var protectionSpace = challenge.ProtectionSpace;
 				var authenticationMethod = protectionSpace.AuthenticationMethod;
-				
+				debug_log authenticationMethod;
 				if (authenticationMethod == "NSURLAuthenticationMethodClientCertificate")
 				{
 					if(_identity != null)
@@ -161,22 +203,13 @@ namespace Fuse.Net.Http
 							return;
 						}
 					}
-					else
-					{
-						// default behaviour
-						completionHandler(NSUrlSessionAuthChallengeDisposition.PerformDefaultHandling, null);
-						return;
-					}
-				}
-				else
-				{
-					debug_log "can this happen?";
-					completionHandler(NSUrlSessionAuthChallengeDisposition.PerformDefaultHandling, null);
-					return;
 				}
 
-
-			} catch (Exception e)
+				debug_log "default handling";
+				completionHandler(NSUrlSessionAuthChallengeDisposition.PerformDefaultHandling, null);
+				return;
+			}
+			catch (Exception e)
 			{
 				debug_log e.Message;
 				debug_log e.StackTrace;
