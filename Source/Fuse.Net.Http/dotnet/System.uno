@@ -145,7 +145,7 @@ namespace System.Net.Http
 		public extern HttpHeaders Headers { get; }
 		public extern override string ToString();
 		public extern System.Threading.Tasks.Task<byte[]> ReadAsByteArrayAsync();
-		//public Task<Stream> ReadAsStreamAsync();
+		public extern System.Threading.Tasks.Task<Uno.IO.Stream> ReadAsStreamAsync();
 		public extern System.Threading.Tasks.Task<string> ReadAsStringAsync();
 	}
 	[DotNetType("System.Net.Http.StreamContent")]

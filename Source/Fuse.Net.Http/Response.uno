@@ -21,6 +21,11 @@ namespace Fuse.Net.Http
 		public string ReasonPhrase { get { return Uno.Net.Http.HttpStatusReasonPhrase.GetFromStatusCode(StatusCode); } }
 		public string ContentLength { get; set; }
 
+		public Uno.IO.Stream GetBodyAsStream()
+		{
+			return _impl.GetBodyAsStream();
+		}
+
 		public string GetBodyAsString()
 		{
 			return _impl.GetBodyAsString();
@@ -71,6 +76,11 @@ namespace Fuse.Net.Http
 		public IDictionary<string, IEnumerable<string>> GetHeaders()
 		{
 			return new Dictionary<string, IEnumerable<string>>();
+		}
+		
+		public Uno.IO.Stream GetBodyAsStream()
+		{
+			return null;
 		}
 
 		public string GetBodyAsString()

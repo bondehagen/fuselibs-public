@@ -180,7 +180,7 @@ namespace Foundation
 	}
 
 	[DotNetType("Foundation.NSUrlSessionResponseDisposition")]
-	internal enum NSUrlSessionResponseDisposition : long
+	extern(DOTNET && HOST_MAC) internal enum NSUrlSessionResponseDisposition : long
 	{
 		Cancel = 0l,
 		Allow,

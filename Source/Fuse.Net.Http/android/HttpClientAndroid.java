@@ -77,6 +77,11 @@ public class HttpClientAndroid extends AsyncTask<Void, Void, Long> {
             /*connection.setRequestProperty("Accept-Encoding", "");
             connection.setRequestProperty("User-Agent", "");
             connection.setRequestProperty("Connection", "close"); //Keep-Alive*/
+
+            /*
+            	//disable gzip:
+               connection.setRequestProperty("Accept-Encoding", "identity");
+            */
             for (Map.Entry<String, List<String>> entry : this.message.getHeaders().entrySet()) {
                 for(String value : entry.getValue()) {
                     connection.addRequestProperty(entry.getKey(), value);

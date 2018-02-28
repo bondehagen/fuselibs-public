@@ -40,6 +40,35 @@ namespace Fuse.Net.Http
 			HttpURLConnection connection = (HttpURLConnection)@{ResponseImplementation:Of(_this)._urlConnection:Get()};
 			return connection.getHeaderFields();
 		@}
+		
+		public Uno.IO.Stream GetBodyAsStream()
+		{
+			return new JavaStream(GetInputStream(), GetOutputStream());
+		}
+		
+		[Foreign(Language.Java)]
+		Java.Object GetInputStream()
+		@{
+			try {
+				HttpURLConnection connection = (HttpURLConnection)@{ResponseImplementation:Of(_this)._urlConnection:Get()};
+				return connection.getInputStream();
+			} catch (IOException e) {
+				// TODO
+			}
+			return null;
+		@}
+
+		[Foreign(Language.Java)]
+		Java.Object GetOutputStream()
+		@{
+			try {
+				HttpURLConnection connection = (HttpURLConnection)@{ResponseImplementation:Of(_this)._urlConnection:Get()};
+				return connection.getOutputStream();
+			} catch (IOException e) {
+				// TODO
+			}
+			return null;
+		@}
 
 		[Foreign(Language.Java)]
 		public string GetBodyAsString()

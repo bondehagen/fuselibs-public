@@ -48,6 +48,11 @@ namespace Fuse.Net.Http
 			return dict;
 		}
 
+		public Uno.IO.Stream GetBodyAsStream()
+		{
+			return _response.Content.ReadAsStreamAsync().Result;
+		}
+
 		public string GetBodyAsString()
 		{
 			return _response.Content.ReadAsStringAsync().Result;
