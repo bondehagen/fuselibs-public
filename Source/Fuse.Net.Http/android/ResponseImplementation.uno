@@ -51,6 +51,11 @@ namespace Fuse.Net.Http
 		@{
 			try {
 				HttpURLConnection connection = (HttpURLConnection)@{ResponseImplementation:Of(_this)._urlConnection:Get()};
+				if ("gzip".equals(connection.getContentEncoding())) {
+					return new java.util.zip.GZIPInputStream(connection.getInputStream());
+				} else if ("deflate".equals(connection.getContentEncoding())) {
+					return new java.util.zip.InflaterInputStream(connection.getInputStream());
+				}
 				return connection.getInputStream();
 			} catch (IOException e) {
 				// TODO

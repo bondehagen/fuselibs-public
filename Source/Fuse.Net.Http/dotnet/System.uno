@@ -165,6 +165,7 @@ namespace System.Net.Http
 	[DotNetType("System.Net.Http.HttpClientHandler")]
 	extern(DOTNET && !HOST_MAC) internal class HttpClientHandler
 	{
+		public DecompressionMethods AutomaticDecompression { get; set; }
 		public extern bool AllowAutoRedirect { get; set; }
 		public extern System.Net.IWebProxy Proxy { get; set; }
 		public extern bool UseProxy { get; set; }
@@ -172,6 +173,14 @@ namespace System.Net.Http
 }
 namespace System.Net
 {
+	[DotNetType("System.Net.DecompressionMethods")]
+	extern(DOTNET) public enum DecompressionMethods
+	{
+		Deflate,
+		GZip,
+		None
+	}
+	
 	[DotNetType("System.Net.SecurityProtocolType")]
 	extern(DOTNET) public enum SecurityProtocolType
  	{

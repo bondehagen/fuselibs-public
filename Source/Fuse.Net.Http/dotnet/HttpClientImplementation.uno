@@ -58,7 +58,7 @@ namespace Fuse.Net.Http
             	handler.Proxy = new DotNetProxy(_client.Proxy.Address.Scheme, _client.Proxy.Address.Host, _client.Proxy.Address.Port);
             	handler.UseProxy = true;
 			}
-
+    		handler.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
 			// handler.ClientCertificateOptions = ClientCertificateOption.Manual;
             handler.AllowAutoRedirect = _client.AutoRedirect;
 			
