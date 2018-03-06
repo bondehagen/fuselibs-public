@@ -33,6 +33,11 @@ namespace Fuse.Net.Http
 			return dict;
 		}
 
+		public Uno.IO.Stream GetBodyAsStream()
+		{
+			return null;
+		}
+
 		public string GetBodyAsString()
 		{
 			return _data.ToString();

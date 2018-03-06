@@ -6,6 +6,12 @@ using Uno.Threading;
 
 namespace Foundation
 {
+	[DotNetType("Foundation.ExportAttribute")]
+	extern(DOTNET && HOST_MAC) public class ExportAttribute : Attribute
+	{
+		public extern ExportAttribute(string selector);
+	}
+
 	[DotNetType("Foundation.NSObject")]
 	extern(DOTNET && HOST_MAC) public class NSObject
 	{
@@ -29,6 +35,7 @@ namespace Foundation
 	extern(DOTNET && HOST_MAC) public class NSNumber : NSValue
 	{
 		public extern static NSNumber FromInt32(int number);
+		public extern virtual long Int64Value { get; }
 	}
 	
 	[DotNetType("Foundation.NSDictionary")]
@@ -101,13 +108,40 @@ namespace Foundation
 		public extern int StatusCode { get; }
 		public extern NSDictionary AllHeaderFields { get; }
 	}
+ 	
+ 	[DotNetType("Foundation.NSStream")]
+	extern(DOTNET && HOST_MAC) internal class NSStream
+	{
+		public extern virtual void Open();
+		public extern NSNumber FileCurrentOffset { get; }
+		public extern NSError Error { get; }
+		public extern virtual NSStreamStatus Status { get; }
+	}
+	
+	[DotNetType("Foundation.NSStreamStatus")]
+	extern(DOTNET && HOST_MAC) internal enum NSStreamStatus : ulong
+	{
+		NotOpen = 0ul,
+		Opening,
+		Open,
+		Reading,
+		Writing,
+		AtEnd,
+		Closed,
+		Error
+	}	
 
  	[DotNetType("Foundation.NSInputStream")]
-	extern(DOTNET && HOST_MAC) internal class NSInputStream
+	extern(DOTNET && HOST_MAC) internal class NSInputStream : NSStream
 	{
-		//public NSInputStream (NSData data)
-		//HasBytesAvailable() : Boolean
-		//Read(Byte[], UInt32) : Int32
+		public extern NSInputStream (NSData data);
+		public extern virtual bool HasBytesAvailable();
+		public extern int Read(byte[] buffer, int offset, int length);
+	}
+ 	
+ 	[DotNetType("Foundation.NSOutputStream")]
+	extern(DOTNET && HOST_MAC) internal class NSOutputStream : NSStream
+	{
 	}
 
 	[DotNetType("Foundation.NSError")]
@@ -135,8 +169,19 @@ namespace Foundation
 	extern(DOTNET && HOST_MAC) internal class NSUrlSessionTask
 	{
 		//https://developer.xamarin.com/api/type/Foundation.NSUrlSessionTask/
+		public extern virtual NSUrlSessionTaskState State { get; }
 		public extern void Resume();
 		public extern void Cancel();
+		public extern virtual long BytesReceived { get; }
+	}
+	
+	[DotNetType("Foundation.NSUrlSessionTaskState")]
+	extern(DOTNET && HOST_MAC) internal enum NSUrlSessionTaskState : long
+	{
+		Running = 0l,
+		Suspended,
+		Canceling,
+		Completed
 	}
 
 	[DotNetType("Foundation.NSUrlSessionDataTask")]
@@ -178,6 +223,10 @@ namespace Foundation
 		public extern virtual void DidReceiveResponse(NSUrlSession session, NSUrlSessionDataTask dataTask, NSUrlResponse response, Action<NSUrlSessionResponseDisposition> completionHandler);
 		public extern virtual void WillCacheResponse(NSUrlSession session, NSUrlSessionDataTask dataTask, NSCachedUrlResponse proposedResponse, Action<NSCachedUrlResponse> completionHandler);
 	}
+
+	[DotNetType("Foundation.INSUrlSessionStreamDelegate")]
+	extern(DOTNET && HOST_MAC) internal interface INSUrlSessionStreamDelegate 
+	{}
 
 	[DotNetType("Foundation.NSUrlSessionResponseDisposition")]
 	extern(DOTNET && HOST_MAC) internal enum NSUrlSessionResponseDisposition : long

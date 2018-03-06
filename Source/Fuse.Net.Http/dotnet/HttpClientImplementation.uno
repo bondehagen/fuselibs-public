@@ -22,6 +22,7 @@ namespace Fuse.Net.Http
 		{
 			_client = client;
 		}
+		
 		class DotNetProxy : System.Net.IWebProxy
 		{
 			System.Uri _proxyAddress;

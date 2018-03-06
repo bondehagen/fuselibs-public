@@ -6,7 +6,7 @@ namespace Fuse.Net.Http
 	using Foundation;
 	using global::Security;
 
-	extern(DOTNET && HOST_MAC) class HttpClientImplementation : NSUrlSessionDataDelegate
+	extern(DOTNET && HOST_MAC) class HttpClientImplementation : NSUrlSessionDataDelegate, INSUrlSessionStreamDelegate
 	{
 		Promise<Response> _response;
 		HttpClient _client;
@@ -74,6 +74,7 @@ namespace Fuse.Net.Http
 				//var task = _session.CreateDataTask(nsUrlRequest, Callback);
 				var task = _session.CreateDataTask(nsUrlRequest);
 				task.Resume();
+				//TODO: session.finishandinvalidate()
 			}
 			return _response;
 		}
@@ -117,15 +118,61 @@ namespace Fuse.Net.Http
 		public override void DidBecomeStreamTask(NSUrlSession session, NSUrlSessionDataTask dataTask, NSUrlSessionStreamTask streamTask)
 		{
 			debug_log "DidBecomeStreamTask";
+
+			streamTask.CaptureStreams();
 		}
+
+		// NOTE: This is an implementation of a	 method on INSUrlSessionStreamDelegate. The method is optional and the reason for using the Export attribute.
+		[Export("URLSession:streamTask:didBecomeInputStream:outputStream:")]
+		public virtual void CompletedTaskCaptureStreams(NSUrlSession session, NSUrlSessionStreamTask streamTask, NSInputStream inputStream, NSOutputStream outputStream)
+		{
+			debug_log "complete capture";
+			debug_log streamTask.State;
+			
+			using (var sr = new Uno.IO.StreamReader(new MacStream(inputStream, outputStream)))
+			{
+				debug_log sr.ReadToEnd();
+			}
+		}
+
+		[Export("URLSession:betterRouteDiscoveredForStreamTask:")]
+		public virtual void BetterRouteDiscovered(NSUrlSession session, NSUrlSessionStreamTask streamTask)
+		{
+			debug_log "BetterRouteDiscovered";
+		}
+
+		[Export("URLSession:readClosedForStreamTask:")]
+		public virtual void ReadClosed(NSUrlSession session, NSUrlSessionStreamTask streamTask)
+		{
+			debug_log "ReadClosed";
+		}
+		
+		[Export("URLSession:writeClosedForStreamTask:")]
+		public virtual void WriteClosed(NSUrlSession session, NSUrlSessionStreamTask streamTask)
+		{
+			debug_log "WriteClosed";
+		}
+
 		public override void DidReceiveData(NSUrlSession session, NSUrlSessionDataTask dataTask, NSData data)
 		{
 			debug_log "DidReceiveData";
 			// will be called until all data is received
+			debug_log data.ToString();
 		}
+
 		public override void DidReceiveResponse(NSUrlSession session, NSUrlSessionDataTask dataTask, NSUrlResponse response, Action<NSUrlSessionResponseDisposition> completionHandler)
 		{
 			debug_log "DidReceiveResponse";
+			debug_log "BytesReceived: " + dataTask.BytesReceived;
+			debug_log dataTask.State;
+
+			//NOTE: At this point we got the headers
+			var httpResponse = response as NSHttpUrlResponse;
+			if (httpResponse != null)
+			{
+				debug_log httpResponse.StatusCode;
+			}
+
 			//completionHandler(NSUrlSessionResponseDisposition.Allow); // this will call DidReceiveData next
 			completionHandler(NSUrlSessionResponseDisposition.BecomeStream);
 		}
