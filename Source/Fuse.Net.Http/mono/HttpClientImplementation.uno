@@ -23,42 +23,28 @@ namespace Fuse.Net.Http
 			var url = NSUrl.FromString(request.Url);
 			var nsUrlRequest = new NSMutableUrlRequest(url);
 			nsUrlRequest.HttpMethod = request.Method;
-			
+			nsUrlRequest.TimeoutInterval = _client.Timeout;
+
+			foreach(var h in request.Headers)
+			{
+				// NOTE/TODO: Xamarin does not support addValue:forHttpHeaderField, only setValue: thus the next hack to support multiple header fields with same key. This is allowed according to 7230 spec, except for Set-Cookie header!
+				var hv = "";
+				foreach(var v in h.Value)
+			 	{
+			 		if(hv.Length > 0) hv += ",";
+			 		hv += v;
+				}
+				nsUrlRequest[h.Key] = hv;
+			}
+
 			using (var configuration = NSUrlSessionConfiguration.DefaultSessionConfiguration)
 			{
 				if (_client.Proxy != null)
 				{
-					var values = new NSObject[]
-					{
-						NSObject.FromObject(_client.Proxy.Address.Host),
-						NSNumber.FromInt32(_client.Proxy.Address.Port),
-						NSNumber.FromInt32(1),
-
-						NSObject.FromObject(_client.Proxy.Address.Host),
-						NSNumber.FromInt32(_client.Proxy.Address.Port),
-						NSNumber.FromInt32(1),
-					};
-					var keys = new NSObject[]
-					{
-						NSObject.FromObject("HTTPProxy"),
-						NSObject.FromObject("HTTPPort"),
-						NSObject.FromObject("HTTPEnable"),
-
-						NSObject.FromObject("HTTPSProxy"),
-						NSObject.FromObject("HTTPSPort"),
-						NSObject.FromObject("HTTPSEnable")
-					};
-					var proxyDict = NSDictionary.FromObjectsAndKeys(values, keys);
-					configuration.ConnectionProxyDictionary = proxyDict;
+					configuration.ConnectionProxyDictionary = ConvertProxy(_client.Proxy);
 				}
 				
 				_autoRedirect = _client.AutoRedirect;
-
-				var dict = new Uno.Collections.Dictionary<Object, Object>();
-				foreach(var h in request.Headers)
-					dict.Add(h.Key, h.Value[0]); // TODO: Support multiple values
-
-				//todo: nsUrlRequest.Headers = (NSDictionary)dict;
 				
 				if (_client.ClientCertificates != null && _client.ClientCertificates.Count > 0)
 				{
@@ -68,20 +54,49 @@ namespace Fuse.Net.Http
 
 					_identity = SecIdentity.Import(certData, password);
 				}
+
 				configuration.HttpShouldUsePipelining = false;
 				var _session = NSUrlSession.FromConfiguration(configuration, this, null);
 				debug_log "ready to send";
 				//var task = _session.CreateDataTask(nsUrlRequest, Callback);
 				var task = _session.CreateDataTask(nsUrlRequest);
 				task.Resume();
-				//TODO: session.finishandinvalidate()
+				_session.FinishTasksAndInvalidate();
 			}
 			return _response;
 		}
 		
+		NSDictionary ConvertProxy(NetworkProxy proxy)
+		{
+			if (proxy == null)
+				throw new ArgumentNullException("proxy");
+
+			var values = new NSObject[]
+			{
+				NSObject.FromObject(proxy.Address.Host),
+				NSNumber.FromInt32(proxy.Address.Port),
+				NSNumber.FromInt32(1),
+
+				NSObject.FromObject(proxy.Address.Host),
+				NSNumber.FromInt32(proxy.Address.Port),
+				NSNumber.FromInt32(1),
+			};
+			var keys = new NSObject[]
+			{
+				NSObject.FromObject("HTTPProxy"),
+				NSObject.FromObject("HTTPPort"),
+				NSObject.FromObject("HTTPEnable"),
+
+				NSObject.FromObject("HTTPSProxy"),
+				NSObject.FromObject("HTTPSPort"),
+				NSObject.FromObject("HTTPSEnable")
+			};
+			return NSDictionary.FromObjectsAndKeys(values, keys);
+		}
+
 		SecIdentity _identity;
 		
-		void Callback(NSData data, NSUrlResponse urlResponse, NSError error) 
+		/*void Callback(NSData data, NSUrlResponse urlResponse, NSError error) 
 		{
 			debug_log "callback";
 			try
@@ -103,7 +118,7 @@ namespace Fuse.Net.Http
 			{
 				_response.Reject(e);
 			}
-		}
+		}*/
 		
 		public override void DidBecomeInvalid(NSUrlSession session, NSError error)
 		{
@@ -245,7 +260,7 @@ namespace Fuse.Net.Http
 						var result = _client.ServerCertificateValidationCallback(c, (Fuse.Security.SslPolicyErrors)(int)0);
 						if (result)
 						{
-							var credential = NSUrlCredential.FromTrust(protectionSpace.ServerSecTrust);
+							var credential = NSUrlCredential.FromTrust(serverTrust);
 							completionHandler(NSUrlSessionAuthChallengeDisposition.UseCredential, credential);
 							return;
 						}

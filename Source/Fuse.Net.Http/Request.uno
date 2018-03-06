@@ -22,7 +22,10 @@ namespace Fuse.Net.Http
 			if (Headers == null)
 				Headers = new Dictionary<string, IList<string>>();
 			
-			Headers.Add(name, new List<string>() { value } );
+			if (Headers.ContainsKey(name))
+				Headers[name].Add(value);
+			else
+				Headers.Add(name, new List<string>() { value } );
 		}
 
 		public void SetBody(string data)

@@ -39,7 +39,7 @@ namespace Foundation
 	}
 	
 	[DotNetType("Foundation.NSDictionary")]
-	extern(DOTNET && HOST_MAC) public class NSDictionary : Uno.Collections.Dictionary<Object, Object>
+	extern(DOTNET && HOST_MAC) public class NSDictionary : Uno.Collections.IDictionary<NSObject, NSObject>
 	{
 		public extern static NSDictionary FromObjectAndKey(NSObject obj, string key);
 		public extern static NSDictionary FromObjectsAndKeys(NSObject[] objects, NSObject[] keys);
@@ -47,6 +47,7 @@ namespace Foundation
 		public extern NSObject this[NSObject key] { get; }
 		public extern object this[int index] { get; }
 		public extern NSObject this[string key] { get; }
+		public extern IEnumerator<KeyValuePair<NSObject, NSObject>> GetEnumerator();
 	}
 
 	[DotNetType("Foundation.NSUrl")]
@@ -69,11 +70,13 @@ namespace Foundation
 	{
 		public extern NSMutableUrlRequest(NSUrl url);
 		public extern virtual string HttpMethod { get; set; }
-		//public virtual NSData Body { get; set; }
-		public virtual NSInputStream BodyStream { get; set; }
-		public virtual NSDictionary Headers { get; set; }
-			//CachePolicy = NSUrlRequestCachePolicy.UseProtocolCachePolicy,
-		// public String this [String key] { get; set; }
+		//public extern virtual NSData Body { get; set; }
+		public extern virtual NSInputStream BodyStream { get; set; }
+		public extern virtual NSDictionary Headers { get; set; }
+		public extern new virtual double TimeoutInterval { get; set; }
+		//CachePolicy = NSUrlRequestCachePolicy.UseProtocolCachePolicy,
+		
+		public extern new string this[string key] { get; set; }
 		// public virtual Boolean ShouldHandleCookies { get; set; }
 	}
 
@@ -91,6 +94,7 @@ namespace Foundation
 
 		public extern virtual NSUrlSessionDataTask CreateDataTask(NSUrlRequest request, NSUrlSessionResponse completionHandler);
 		public extern virtual NSUrlSessionDataTask CreateDataTask(NSUrlRequest request);
+		public extern virtual void FinishTasksAndInvalidate();
 	}
 
 	[DotNetType("Foundation.NSUrlSessionResponse")]
