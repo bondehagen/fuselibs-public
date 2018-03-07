@@ -114,6 +114,12 @@ namespace Fuse.Net.Http
 		public virtual void CompletedTaskCaptureStreams(NSUrlSession session, NSUrlSessionStreamTask streamTask, NSInputStream inputStream, NSOutputStream outputStream)
 		{
 			debug_log "complete capture";
+			debug_log streamTask.State;
+			
+			using (var sr = new Uno.IO.StreamReader(new MacStream(inputStream, outputStream)))
+			{
+				debug_log sr.ReadToEnd();
+			}
 			_response.Resolve(new Response(new ResponseImplementation(_urlResponse, inputStream, outputStream)));
 			_urlResponse = null;
 		}
@@ -176,14 +182,16 @@ namespace Fuse.Net.Http
 			if(error == null) {
 				return;
 			}
-
+			if(error.Code == NSUrlError.TimedOut) {
+				_response.Reject(new TimeoutException(error.LocalizedFailureReason));
+				return;
+			}
 			debug_log "DidCompleteWithError";
 			debug_log error.LocalizedFailureReason;
 			debug_log error.ToString();
 			debug_log task.GetType();
 			debug_log "---";
-			if (error != null)
-				_response.Reject(new Exception(error.ToString()));
+			_response.Reject(new Exception(error.ToString()));
 		}
 		
 		public override void DidSendBodyData (NSUrlSession session, NSUrlSessionTask task, int bytesSent, int totalBytesSent, int totalBytesExpectedToSend)
