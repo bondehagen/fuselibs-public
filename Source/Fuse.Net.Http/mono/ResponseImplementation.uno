@@ -1,16 +1,26 @@
 using Uno;
 using Uno.Collections;
 using Uno.Compiler.ExportTargetInterop;
-using Fuse.Security;
+using Foundation;
 
 namespace Fuse.Net.Http
 {
 	extern(DOTNET && HOST_MAC) class ResponseImplementation
 	{
-		readonly Foundation.NSHttpUrlResponse _response;
-		readonly Foundation.NSData _data;
+		readonly NSHttpUrlResponse _response;
+		readonly NSData _data;
 
-		public ResponseImplementation(Foundation.NSHttpUrlResponse response, Foundation.NSData data)
+		readonly NSInputStream _inputStream;
+		readonly NSOutputStream _outputStream;
+
+		public ResponseImplementation(NSHttpUrlResponse response, NSInputStream inputStream, NSOutputStream outputStream)
+		{
+			_response = response;
+			_inputStream = inputStream;
+			_outputStream = outputStream;
+		}
+
+		public ResponseImplementation(NSHttpUrlResponse response, NSData data)
 		{
 			_response = response;
 			_data = data;
@@ -18,7 +28,7 @@ namespace Fuse.Net.Http
 
 		public int GetStatusCode()
 		{
-			return _response.StatusCode;		
+			return _response.StatusCode;
 		}
 
 		public IDictionary<string, IEnumerable<string>> GetHeaders()
@@ -35,7 +45,7 @@ namespace Fuse.Net.Http
 
 		public Uno.IO.Stream GetBodyAsStream()
 		{
-			return null;
+			return new MacStream(_inputStream, _outputStream);
 		}
 
 		public string GetBodyAsString()

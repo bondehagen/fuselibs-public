@@ -23,7 +23,7 @@ namespace Fuse.Net.Http
 			var url = NSUrl.FromString(request.Url);
 			var nsUrlRequest = new NSMutableUrlRequest(url);
 			nsUrlRequest.HttpMethod = request.Method;
-			nsUrlRequest.TimeoutInterval = _client.Timeout;
+			nsUrlRequest.TimeoutInterval = _client.Timeout / 1000;
 
 			foreach(var h in request.Headers)
 			{
@@ -55,7 +55,6 @@ namespace Fuse.Net.Http
 					_identity = SecIdentity.Import(certData, password);
 				}
 
-				configuration.HttpShouldUsePipelining = false;
 				var _session = NSUrlSession.FromConfiguration(configuration, this, null);
 				debug_log "ready to send";
 				//var task = _session.CreateDataTask(nsUrlRequest, Callback);
@@ -96,39 +95,12 @@ namespace Fuse.Net.Http
 
 		SecIdentity _identity;
 		
-		/*void Callback(NSData data, NSUrlResponse urlResponse, NSError error) 
-		{
-			debug_log "callback";
-			try
-			{
-				if (urlResponse != null)
-				{
-					_response.Resolve(new Response(new ResponseImplementation((NSHttpUrlResponse)urlResponse, data)));
-					return;
-				}
-				if (error != null)
-				{
-					debug_log "callback error";
-					_response.Reject(new Exception(error.ToString()));
-					return;
-				}
-				_response.Reject(new Exception("Something wrong happened"));
-			}
-			catch (Exception e)	
-			{
-				_response.Reject(e);
-			}
-		}*/
-		
 		public override void DidBecomeInvalid(NSUrlSession session, NSError error)
 		{
 			debug_log "DidBecomeInvalid";
+			if (error != null)
+				_response.Reject(new Exception(error.ToString()));
 		}
-
-		/*public override void DidFinishEventsForBackgroundSession(NSUrlSession session)
-		{
-			debug_log "DidFinishEventsForBackgroundSession";
-		}*/
 
 		public override void DidBecomeStreamTask(NSUrlSession session, NSUrlSessionDataTask dataTask, NSUrlSessionStreamTask streamTask)
 		{
@@ -142,12 +114,8 @@ namespace Fuse.Net.Http
 		public virtual void CompletedTaskCaptureStreams(NSUrlSession session, NSUrlSessionStreamTask streamTask, NSInputStream inputStream, NSOutputStream outputStream)
 		{
 			debug_log "complete capture";
-			debug_log streamTask.State;
-			
-			using (var sr = new Uno.IO.StreamReader(new MacStream(inputStream, outputStream)))
-			{
-				debug_log sr.ReadToEnd();
-			}
+			_response.Resolve(new Response(new ResponseImplementation(_urlResponse, inputStream, outputStream)));
+			_urlResponse = null;
 		}
 
 		[Export("URLSession:betterRouteDiscoveredForStreamTask:")]
@@ -175,6 +143,7 @@ namespace Fuse.Net.Http
 			debug_log data.ToString();
 		}
 
+		NSHttpUrlResponse _urlResponse = null;
 		public override void DidReceiveResponse(NSUrlSession session, NSUrlSessionDataTask dataTask, NSUrlResponse response, Action<NSUrlSessionResponseDisposition> completionHandler)
 		{
 			debug_log "DidReceiveResponse";
@@ -182,11 +151,7 @@ namespace Fuse.Net.Http
 			debug_log dataTask.State;
 
 			//NOTE: At this point we got the headers
-			var httpResponse = response as NSHttpUrlResponse;
-			if (httpResponse != null)
-			{
-				debug_log httpResponse.StatusCode;
-			}
+			_urlResponse = response as NSHttpUrlResponse;
 
 			//completionHandler(NSUrlSessionResponseDisposition.Allow); // this will call DidReceiveData next
 			completionHandler(NSUrlSessionResponseDisposition.BecomeStream);
@@ -211,11 +176,14 @@ namespace Fuse.Net.Http
 			if(error == null) {
 				return;
 			}
+
 			debug_log "DidCompleteWithError";
 			debug_log error.LocalizedFailureReason;
 			debug_log error.ToString();
 			debug_log task.GetType();
 			debug_log "---";
+			if (error != null)
+				_response.Reject(new Exception(error.ToString()));
 		}
 		
 		public override void DidSendBodyData (NSUrlSession session, NSUrlSessionTask task, int bytesSent, int totalBytesSent, int totalBytesExpectedToSend)
