@@ -74,10 +74,22 @@ namespace Foundation
 		public extern virtual NSInputStream BodyStream { get; set; }
 		public extern virtual NSDictionary Headers { get; set; }
 		public extern new virtual double TimeoutInterval { get; set; }
-		//CachePolicy = NSUrlRequestCachePolicy.UseProtocolCachePolicy,
+		public extern virtual NSUrlRequestCachePolicy CachePolicy { get; set; }
 		
 		public extern new string this[string key] { get; set; }
 		// public virtual Boolean ShouldHandleCookies { get; set; }
+	}
+	
+	[DotNetType("Foundation.NSUrlRequestCachePolicy")]
+	extern(DOTNET && HOST_MAC) internal enum NSUrlRequestCachePolicy : ulong
+	{
+		UseProtocolCachePolicy = 0uL,
+		ReloadIgnoringLocalCacheData = 1uL,
+		ReloadIgnoringLocalAndRemoteCacheData = 4uL,
+		ReloadIgnoringCacheData = ReloadIgnoringLocalCacheData,
+		ReturnCacheDataElseLoad = 2uL,
+		ReturnCacheDataDoNotLoad = 3uL,
+		ReloadRevalidatingCacheData = 5uL
 	}
 
 	[DotNetType("Foundation.NSUrlSession")]

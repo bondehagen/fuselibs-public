@@ -66,7 +66,8 @@ namespace Fuse.Net.Http
         }
 
         public override int Read(byte[] dst, int byteOffset, int byteCount)
-        {   var ret = _inputStream.Read(dst, byteOffset, byteCount);
+        {
+            var ret = _inputStream.Read(dst, byteOffset, byteCount);
             if(ret == -1)
                 throw new Exception(_inputStream.Error.ToString());
 

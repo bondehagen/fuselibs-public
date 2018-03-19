@@ -48,6 +48,11 @@ namespace Fuse.Net.Http
 			}];
 		@}
 
+		public Uno.IO.Stream GetBodyAsStream()
+		{
+			return null;
+		}
+			
 		public string GetBodyAsString()
 		{
 			return Uno.Text.Utf8.GetString(_data);

@@ -24,6 +24,9 @@ namespace Fuse.Net.Http
 			var nsUrlRequest = new NSMutableUrlRequest(url);
 			nsUrlRequest.HttpMethod = request.Method;
 			nsUrlRequest.TimeoutInterval = _client.Timeout / 1000;
+			nsUrlRequest.CachePolicy = (request.EnableCache)
+				? NSUrlRequestCachePolicy.UseProtocolCachePolicy
+				: NSUrlRequestCachePolicy.ReloadIgnoringLocalCacheData;
 
 			foreach(var h in request.Headers)
 			{
@@ -97,6 +100,8 @@ namespace Fuse.Net.Http
 		
 		public override void DidBecomeInvalid(NSUrlSession session, NSError error)
 		{
+			if (error == null) return;
+
 			debug_log "DidBecomeInvalid";
 			if (error != null)
 				_response.Reject(new Exception(error.ToString()));
@@ -104,8 +109,6 @@ namespace Fuse.Net.Http
 
 		public override void DidBecomeStreamTask(NSUrlSession session, NSUrlSessionDataTask dataTask, NSUrlSessionStreamTask streamTask)
 		{
-			debug_log "DidBecomeStreamTask";
-
 			streamTask.CaptureStreams();
 		}
 
@@ -114,12 +117,6 @@ namespace Fuse.Net.Http
 		public virtual void CompletedTaskCaptureStreams(NSUrlSession session, NSUrlSessionStreamTask streamTask, NSInputStream inputStream, NSOutputStream outputStream)
 		{
 			debug_log "complete capture";
-			debug_log streamTask.State;
-			
-			using (var sr = new Uno.IO.StreamReader(new MacStream(inputStream, outputStream)))
-			{
-				debug_log sr.ReadToEnd();
-			}
 			_response.Resolve(new Response(new ResponseImplementation(_urlResponse, inputStream, outputStream)));
 			_urlResponse = null;
 		}
