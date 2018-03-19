@@ -1,22 +1,21 @@
 using Uno;
 using Uno.Collections;
 using Uno.Threading;
-using Fuse.Security;
 
 namespace Fuse.Net.Http
 {
 	public class HttpClient
 	{
 		HttpClientImplementation _impl;
-		IList<X509Certificate> _clientCertificates;
-		public Func<X509Certificate, SslPolicyErrors, bool> ServerCertificateValidationCallback;
+		IList<byte[]> _clientCertificates;
+		public Func<Uno.Collections.IList<byte[]>, string, bool> ServerCertificateValidationCallback;
 
-		internal IList<X509Certificate> ClientCertificates
+		internal IList<byte[]> ClientCertificates
 		{
 			get { return _clientCertificates; }
 		}
 
-		public void SetClientCertificate(X509Certificate certificate)
+		public void SetClientCertificate(byte[] certificate)
 		{
 			ClientCertificates.Add(certificate);
 		}
@@ -30,7 +29,7 @@ namespace Fuse.Net.Http
 			debug_log "init HttpClient";
 			AutoRedirect = true;
 			Timeout = 5000;
-			_clientCertificates = new List<X509Certificate>();
+			_clientCertificates = new List<byte[]>();
 			
 			_impl = new HttpClientImplementation(this);
 		}

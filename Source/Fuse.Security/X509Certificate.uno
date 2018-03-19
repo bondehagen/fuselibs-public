@@ -243,7 +243,7 @@ namespace Fuse.Security.X509
 			{ "2.5.4.46", "dnQualifier" }
 		};
 
-		public RelativeDistinguishedName(Asn1Node datacollection)
+		internal RelativeDistinguishedName(Asn1Node datacollection)
 		{
 			RawData = datacollection.Data;
 			Name = "";
@@ -269,7 +269,7 @@ namespace Fuse.Security.X509
 
 	public class SubjectPublicKeyInfo
 	{
-		public SubjectPublicKeyInfo(AlgorithmIdentifier algorithm, byte[] subjectPublicKey)
+		internal SubjectPublicKeyInfo(AlgorithmIdentifier algorithm, byte[] subjectPublicKey)
 		{
 			Algorithm = algorithm;
 			var asn1 = new Asn1Der(subjectPublicKey).Decode();
@@ -284,7 +284,7 @@ namespace Fuse.Security.X509
 
 	public class AlgorithmIdentifier
 	{
-		public AlgorithmIdentifier(Oid algorithm)
+		internal AlgorithmIdentifier(Oid algorithm)
 		{
 			Algorithm = algorithm;
 		}
@@ -295,7 +295,7 @@ namespace Fuse.Security.X509
 
 	public class Validity
 	{
-		public Validity(Uno.Time.ZonedDateTime notBefore, Uno.Time.ZonedDateTime notAfter)
+		internal Validity(Uno.Time.ZonedDateTime notBefore, Uno.Time.ZonedDateTime notAfter)
 		{
 			NotBefore = notBefore;
 			NotAfter = notAfter;

@@ -6,7 +6,7 @@ using Fuse.Security.X509;
 
 namespace Fuse.Security
 {
-	public enum IdentifierClass : byte
+	internal enum IdentifierClass : byte
 	{
 		Universal = 0X00,
 		Application = 0X01,
@@ -14,7 +14,7 @@ namespace Fuse.Security
 		Private = 0X03
 	}
 
-	public enum TagName : byte
+	internal enum TagName : byte
 	{
 		EOC = 0,
 		BOOLEAN = 0x01,
@@ -47,7 +47,7 @@ namespace Fuse.Security
 	}
 
 
-	public class Asn1Node : IList<Asn1Node>
+	internal class Asn1Node : IList<Asn1Node>
 	{
 		List<Asn1Node> _internalList = new List<Asn1Node>();
 		public void Insert(int index, Asn1Node item)
@@ -251,7 +251,7 @@ namespace Fuse.Security
 		}
 	}
 
-	public struct Tag
+	internal struct Tag
 	{
 		public IdentifierClass IdentifierClass { get; set; }
 		public bool IsConstructed { get; set; }
@@ -272,7 +272,7 @@ namespace Fuse.Security
 		}
 	}
 
-	public class Asn1Der
+	internal class Asn1Der
 	{
 		byte[] buffer;
 		int offset;

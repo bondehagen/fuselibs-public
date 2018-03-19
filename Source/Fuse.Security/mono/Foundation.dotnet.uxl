@@ -1,0 +1,5 @@
+<Extensions Backend="CIL">
+	<Require Condition="!HOST_OSX" Assembly="System.Net.Http" />
+	<Require Condition="!HOST_OSX" Assembly="System.Net.Http.WebRequest" />
+	<Require Condition="HOST_OSX" Assembly="XamMac/Xamarin.Mac.dll" />
+</Extensions>

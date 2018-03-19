@@ -48,15 +48,6 @@ namespace Fuse.Net.Http
 				}
 				
 				_autoRedirect = _client.AutoRedirect;
-				
-				if (_client.ClientCertificates != null && _client.ClientCertificates.Count > 0)
-				{
-					var c = _client.ClientCertificates[0];
-					var password = c.Password;
-					var certData = c.RawBytes;
-
-					_identity = SecIdentity.Import(certData, password);
-				}
 
 				var _session = NSUrlSession.FromConfiguration(configuration, this, null);
 				debug_log "ready to send";
@@ -95,11 +86,10 @@ namespace Fuse.Net.Http
 			};
 			return NSDictionary.FromObjectsAndKeys(values, keys);
 		}
-
-		SecIdentity _identity;
 		
 		public override void DidBecomeInvalid(NSUrlSession session, NSError error)
 		{
+			_urlResponse = null;
 			if (error == null) return;
 
 			debug_log "DidBecomeInvalid";
@@ -206,11 +196,27 @@ namespace Fuse.Net.Http
 				debug_log authenticationMethod;
 				if (authenticationMethod == "NSURLAuthenticationMethodClientCertificate")
 				{
+					SecIdentity _identity;
+					if (_client.ClientCertificates != null && _client.ClientCertificates.Count > 0)
+					{
+						/* TODO var c = _client.ClientCertificates[0];
+						var password = c.Password;
+						var certData = c.RawBytes;
+
+						_identity = SecIdentity.Import(certData, password);*/
+					}
+
 					if(_identity != null)
 					{
+
+						var secCertificates = new SecCertificate[_client.ClientCertificates.Length];
+						for (var i = 0; i < _client.ClientCertificates.Length; i++)
+						{
+							secCertificates[i] = new SecCertificate(_client.ClientCertificates[i]);
+						}
 						var trust = new SecTrust(_identity.Certificate, SecPolicy.CreateBasicX509Policy());
-						SecCertificate[] certificates = new SecCertificate[] { _identity.Certificate };
-						var credential = NSUrlCredential.FromIdentityCertificatesPersistance(_identity, certificates, NSUrlCredentialPersistence.ForSession);
+						
+						var credential = NSUrlCredential.FromIdentityCertificatesPersistance(_identity, secCertificates, NSUrlCredentialPersistence.ForSession);
 						//var credential = new NSUrlCredential(trust);
 						if(credential != null)
 						{
@@ -225,12 +231,15 @@ namespace Fuse.Net.Http
 					{
 						// Get remote certificate
 						var serverTrust = protectionSpace.ServerSecTrust; // contains the server's SSL certificate data
-						var certificate = serverTrust[0];
-
-						// var hostname = challenge.ProtectionSpace.Host;
-						var x509 = certificate.ToX509Certificate2();
-						var c = new Fuse.Security.X509Certificate(x509.RawData);
-						var result = _client.ServerCertificateValidationCallback(c, (Fuse.Security.SslPolicyErrors)(int)0);
+						var certificates = new List<byte[]>;
+						for (var i = 0; i < serverTrust.Count; i++) {
+							var c = serverTrust[i];
+							var x509 = c.ToX509Certificate2();
+							certificates.Add(x509.RawData);
+						}
+						
+						var hostname = challenge.ProtectionSpace.Host;
+						var result = _client.ServerCertificateValidationCallback(certificates, hostname);
 						if (result)
 						{
 							var credential = NSUrlCredential.FromTrust(serverTrust);

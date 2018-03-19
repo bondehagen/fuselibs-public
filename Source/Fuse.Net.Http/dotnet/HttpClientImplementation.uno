@@ -1,7 +1,6 @@
 using Uno;
 using Uno.Collections;
 using Uno.Compiler.ExportTargetInterop;
-using Fuse.Security;
 
 namespace Fuse.Net.Http
 {
@@ -65,7 +64,9 @@ namespace Fuse.Net.Http
 			
 			foreach (var cert in _client.ClientCertificates)
 			{
-				handler.ClientCertificates.Add((X509Certificate2)cert.ImplHandle);
+				var xc = new X509Certificate2();
+				xc.Import(cert);
+				handler.ClientCertificates.Add(xc);
 			}
 
 			var client = new System.Net.Http.HttpClient(handler);
@@ -134,8 +135,14 @@ namespace Fuse.Net.Http
 			{
 				if (_client.ServerCertificateValidationCallback != null)
 				{
-					var c = new Fuse.Security.X509Certificate(certificate.RawData);
-					return _client.ServerCertificateValidationCallback(c, (Fuse.Security.SslPolicyErrors)(int)sslPolicyErrors);
+					var chainElements = chain.ChainElements;
+					var certs = new Uno.Collections.List<byte[]>();
+					for (var i = 0; i < chainElements.Count; i++)
+					{
+						var c = chainElements[i].Certificate;
+						certs.Add(c.RawData);
+					}
+					return _client.ServerCertificateValidationCallback(certs, "hostname");
 				}
 				return (sslPolicyErrors != 0);
 			}

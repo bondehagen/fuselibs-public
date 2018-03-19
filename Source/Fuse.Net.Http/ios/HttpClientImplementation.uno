@@ -2,7 +2,6 @@ using Uno;
 using Uno.Threading;
 using Uno.Compiler.ExportTargetInterop;
 using Uno.Collections;
-using Fuse.Security;
 
 namespace Fuse.Net.Http
 {

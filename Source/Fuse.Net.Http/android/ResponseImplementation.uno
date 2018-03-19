@@ -1,7 +1,6 @@
 using Uno;
 using Uno.Collections;
 using Uno.Compiler.ExportTargetInterop;
-using Fuse.Security;
 
 namespace Fuse.Net.Http
 {

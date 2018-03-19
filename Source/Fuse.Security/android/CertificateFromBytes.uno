@@ -9,8 +9,7 @@ namespace Fuse.Security
 					"java.io.InputStream",
 					"java.security.cert.CertificateFactory",
 					"java.security.cert.X509Certificate")]
-	extern(android)
-	public static class LoadCertificateFromBytes
+	extern(android)	public static class LoadCertificateFromBytes
 	{
 		public static object Load(byte[] data)
 		{

@@ -2,7 +2,7 @@ using Uno.Collections;
 
 namespace Fuse.Security
 {
-	public class ObjectIdentifierTable
+	internal class ObjectIdentifierTable
 	{
 		static Dictionary<string, string> d;
 		

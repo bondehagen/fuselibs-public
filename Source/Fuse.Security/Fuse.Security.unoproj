@@ -1,0 +1,13 @@
+{
+  "Packages": [
+  	"Fuse",
+    "Fuse.Android"
+  ],
+  "InternalsVisibleTo": [
+    "Fuse.Security.Test"
+  ],
+  "Includes": [
+    "*",
+    //"msdnmicrosoftcom.der:Bundle",
+  ]
+}

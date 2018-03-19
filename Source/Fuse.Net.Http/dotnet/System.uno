@@ -1,7 +1,6 @@
 using Uno;
 using Uno.Collections;
 using Uno.Compiler.ExportTargetInterop;
-using Fuse.Security;
 
 namespace System.Threading
 {	
@@ -223,7 +222,22 @@ namespace System.Security.Cryptography.X509Certificates
 
 	[DotNetType("System.Security.Cryptography.X509Certificates.X509Chain")]
 	extern(DOTNET && !HOST_MAC) public class X509Chain
-	{}
+	{
+		public extern X509ChainElementCollection ChainElements { get; }
+	}
+
+	[DotNetType("System.Security.Cryptography.X509Certificates.X509ChainElementCollection")]
+	extern(DOTNET && !HOST_MAC) public sealed class X509ChainElementCollection
+	{	
+		public extern X509ChainElement this[int index] { get; }
+		public extern int Count { get; }
+	}
+
+	[DotNetType("System.Security.Cryptography.X509Certificates.X509ChainElement")]
+	extern(DOTNET && !HOST_MAC) public sealed class X509ChainElement
+	{
+		public extern X509Certificate2 Certificate { get; }
+	}
 
 	[DotNetType("System.Security.Cryptography.X509Certificates.X509CertificateCollection")]
 	extern(DOTNET && !HOST_MAC) internal class X509CertificateCollection
